@@ -169,7 +169,7 @@ body.menu-open { overflow: hidden; }
 .stage { position: absolute; inset: 0; z-index: 1; --o: 0;
   clip-path: inset(calc(var(--wT) * (1 - var(--grow, 0))) calc(var(--wR) * (1 - var(--grow, 0))) calc(var(--wB) * (1 - var(--grow, 0))) calc(var(--wL) * (1 - var(--grow, 0))) round calc(var(--rf) * (1 - var(--grow, 0)))); }
 .stage-ph { position: absolute; inset: 0; }
-.stage-ph img { width: 100%; height: 100%; object-fit: cover; object-position: 62% 50%; transform: scale(calc(1.06 - .06 * var(--o) + .06 * var(--grow, 0))); transform-origin: 70% 60%; }
+.stage-ph img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; transform: scale(calc(1.06 - .06 * var(--o) + .06 * var(--grow, 0))); transform-origin: 70% 60%; }
 .stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(10,31,24,.35), rgba(10,31,24,0) 30%, rgba(10,31,24,0) 55%, rgba(10,31,24,.78) 100%);
   opacity: calc(.6 + .4 * var(--grow, 0)); }
