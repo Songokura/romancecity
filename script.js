@@ -407,7 +407,7 @@
     "menu.wa": "Free consultation",
     "menu.note": "Astana, 4 Shamshi Kaldayakov St. Mon-Sat 09:00-20:00. Across Kazakhstan - online.",
     "hero.kicker": "Astana · <span class=\"m-hide\">all of Kazakhstan </span>online · since 2011",
-    "hero.t1": "Apartment flipping", "hero.t2": "turnkey - your money at work",
+    "hero.t1": "Apartment flipping", "hero.t2": "turnkey&nbsp;- your money at work",
     "hero.lead": "You invest <span class=\"m-hide\">in real estate </span>from 20&nbsp;million&nbsp;KZT - I take on every stage up to the sale<span class=\"m-hide\">: sourcing, renovation, staging and the closing</span>. 15&nbsp;years<span class=\"m-hide\"> of practice</span>, about 50&nbsp;apartments a year.",
     "hero.cta1": "Free consultation", "hero.cta2": "How it works", "hero.ig": "Before and after on Instagram →",
     "strip.a": "Since 2011", "strip.b": "about 50 apartments a year", "strip.c": "properties from 20&nbsp;million&nbsp;KZT", "strip.d": "office at 4 Kaldayakov St.",
