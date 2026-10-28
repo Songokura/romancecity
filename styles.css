@@ -145,7 +145,7 @@ body.menu-open .hdr{background:var(--pine)}
 .hero .acts{margin-bottom:22px}
 .hero .iglink{color:rgba(246,244,237,.78)}
 .hero-ph{position:absolute;top:0;right:0;bottom:0;width:calc(46% + 36% * var(--stay,0));height:auto;aspect-ratio:auto;border-radius:0;max-width:none;z-index:1}
-.hero-ph img{object-position:50% 18%}
+.hero-ph img{object-position:50% 50%}
 .hero-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,58,44,.5),rgba(14,58,44,0) 16%),linear-gradient(90deg,rgba(14,58,44,.55),rgba(14,58,44,0) 28%);pointer-events:none}
 
 /* ---------- Обычные секции ---------- */
@@ -308,9 +308,9 @@ html:not(.js) .rv{opacity:1;transform:none}
   .pw-hero{height:auto;min-height:100svh}
   .hero{display:flex;flex-direction:column;min-height:100svh;height:auto;overflow:hidden}
   .hero-in{position:relative;inset:auto;flex:1 1 auto;display:flex;flex-direction:column;min-height:100svh}
-  .hero-ph{position:absolute;inset:0;width:100%;z-index:0}
-  .hero-ph img{object-position:50% 12%}
-  .hero-ph::after{background:linear-gradient(180deg,rgba(14,58,44,.42) 0%,rgba(14,58,44,0) 20%,rgba(14,58,44,0) 32%,rgba(14,58,44,.88) 56%,var(--pine) 100%)}
+  .hero-ph{position:absolute;inset:0 0 auto 0;width:100%;height:60svh;aspect-ratio:auto;z-index:0}
+  .hero-ph img{object-position:50% 28%}
+  .hero-ph::after{background:linear-gradient(180deg,rgba(14,58,44,.5) 0%,rgba(14,58,44,0) 16%,rgba(14,58,44,0) 58%,rgba(14,58,44,.9) 86%,var(--pine) 100%)}
   .hero-txt{position:relative;z-index:2;width:100%;margin-top:auto;justify-content:flex-end;padding:44svh 20px 36px;transform:none;opacity:1}
   .hero h1{font-size:clamp(33px,9.6vw,44px);margin:12px 0 14px}
   .hero .lead{font-size:16px;margin-bottom:22px}
@@ -352,6 +352,7 @@ html:not(.js) .rv{opacity:1;transform:none}
 }
 @media (max-width:760px) and (max-height:700px){
   .hero-txt{padding-top:38svh}
+  .hero-ph{height:46svh}
   .hero .lead{margin-bottom:16px}
 }
 
