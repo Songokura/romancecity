@@ -1,4 +1,4 @@
-/* Romance City. Ванильный JS: плиты, укладка кадров «ёлочкой», меню, якоря, язык, лента, форма в WhatsApp. */
+/* Romance City. Ванильный JS: плиты, сигнатура «план заселяется», меню, якоря, язык, лента, форма в WhatsApp. */
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement, W = window;
@@ -126,63 +126,18 @@
     }
   });
 
-  /* ---------- Укладка «ёлочкой»: кадр собирается из плашек паркета ----------
-     Кадр .ph: снизу база (.before или тон темы), сверху плашки с фрагментами кадра «после».
-     Плашки - параллелограммы шеврона (французская ёлка): колонки, наклон 45° чередуется.
-     --o на .ph: 0 - ничего не уложено, 1 - кадр чистый (плашки убраны, img.after показан). */
-  function layPlanks(ph) {
-    var img = ph.querySelector("img.after");
-    if (!img) return;
-    if (!img.naturalWidth) {
-      if (!ph._wait) { ph._wait = true; img.addEventListener("load", function () { ph._wait = false; ph._W = 0; layPlanks(ph); if (ph._o !== undefined) setO(ph, ph._o, true); }, { once: true }); }
-      return;
-    }
-    var Wd = ph.clientWidth, Hd = ph.clientHeight;
-    if (!Wd || !Hd) return;
-    if (ph._W === Wd && ph._H === Hd) return;
-    ph._W = Wd; ph._H = Hd;
-    var old = ph.querySelector(".pks"); if (old) old.remove();
-    var iw = img.naturalWidth, ih = img.naturalHeight, sc = Math.max(Wd / iw, Hd / ih), dw = iw * sc, dh = ih * sc;
-    var pos = (getComputedStyle(img).objectPosition || "50% 50%").split(/\s+/);
-    var px = parseFloat(pos[0]) / 100, py = parseFloat(pos[1] || "50%") / 100;
-    if (isNaN(px)) px = .5; if (isNaN(py)) py = .5;
-    var ox = (Wd - dw) * px, oy = (Hd - dh) * py;
-    var n = Wd < 520 ? 3 : 4, cw = Wd / n, pth = Math.round(cw * (Wd < 520 ? .62 : .5));
-    var url = 'url("' + (img.currentSrc || img.src) + '")';
-    var bs = dw.toFixed(1) + "px " + dh.toFixed(1) + "px";
-    var wrap = doc.createElement("div"); wrap.className = "pks";
-    var frag = doc.createDocumentFragment();
-    for (var k = 0; k < n; k++) {
-      var x0 = k * cw, t = (k % 2) ? -1 : 1;
-      for (var y = -cw; y < Hd; y += pth) {
-        var el = doc.createElement("i");
-        var h = cw + pth;
-        var poly = t > 0
-          ? "0 0, 100% " + cw.toFixed(1) + "px, 100% " + h.toFixed(1) + "px, 0 " + pth + "px"
-          : "0 " + cw.toFixed(1) + "px, 100% 0, 100% " + pth + "px, 0 " + h.toFixed(1) + "px";
-        /* порядок укладки: снизу вверх, с лёгким сдвигом слева направо */
-        var d = clamp((1 - (y + h / 2) / Hd) * .7 + (x0 / Wd) * .3, 0, 1) * .76;
-        el.style.cssText = "left:" + x0.toFixed(1) + "px;top:" + y.toFixed(1) + "px;width:" + (cw + .8).toFixed(1) + "px;height:" + h.toFixed(1) + "px;clip-path:polygon(" + poly + ");background-image:" + url + ";background-size:" + bs + ";background-position:" + (ox - x0).toFixed(1) + "px " + (oy - y).toFixed(1) + "px;--d:" + d.toFixed(3);
-        frag.appendChild(el);
-      }
-    }
-    wrap.appendChild(frag);
-    ph.appendChild(wrap);
-    ph.classList.add("lay");
-  }
+  /* ---------- Сигнатура «план заселяется»: --open на .ph, остальное делает CSS ----------
+     0 - комнаты плана закрыты тоном, стены не вычерчены; 1 - кадр чистый. */
   function setO(ph, o, force) {
-    if (REDUCED) o = 1;
     o = clamp(o);
-    if (!force && ph._o === o) return;
+    if (!force && ph._o !== undefined && Math.abs(ph._o - o) < 0.002) return;
     ph._o = o;
-    var open = o >= .995;
-    if (!open) layPlanks(ph);
-    ph.style.setProperty("--o", o.toFixed(4));
-    if (ph._open !== open) { ph._open = open; ph.classList.toggle("open", open); }
+    ph.style.setProperty("--open", o.toFixed(4));
   }
-  var phs = [].slice.call(doc.querySelectorAll(".ph[data-lay]"));
+  var phs = [].slice.call(doc.querySelectorAll(".ph[data-plan]"));
+  phs.forEach(function (ph) { setO(ph, REDUCED ? 1 : 0, true); });
 
-  /* ---------- Плиты: enter / stay / exit ---------- */
+  /* ---------- Плиты ---------- */
   var pws = [].slice.call(doc.querySelectorAll(".pw"));
   var sticky = doc.getElementById("sticky"), kont = doc.getElementById("kontakty");
   var hdr = doc.getElementById("hdr");
@@ -195,7 +150,7 @@
     ticking = false;
     var now = typeof ts === "number" ? ts : performance.now();
     var dt = lastTs ? Math.min(64, now - lastTs) : 16.7; lastTs = now;
-    var kf = 1 - Math.pow(1 - 0.16, dt / 16.7);
+    var kf = 1 - Math.pow(1 - 0.15, dt / 16.7);
     var H = VH;
     var pageY = W.pageYOffset;
     var kontTop = kont ? kont.getBoundingClientRect().top : null;
@@ -218,7 +173,7 @@
       var isHero = pw.classList.contains("pw-hero");
       var open;
       if (isHero) open = REDUCED ? 1 : INTRO;
-      else open = REDUCED ? 1 : (flow ? clamp((enter - 0.18) / 0.5) : clamp((enter - 0.28) / 0.55));
+      else open = REDUCED ? 1 : (flow ? clamp((enter - 0.2) / 0.5) : clamp((enter - 0.3) / 0.55));
       if (s.open < 0 || REDUCED || isHero) s.open = open;
       else {
         s.open += (open - s.open) * kf;
@@ -228,11 +183,11 @@
       put(pw, s, "--stay", (isHero ? easeOut(stay) : stay).toFixed(4));
       put(pw, s, "--exit", exit.toFixed(4));
       var plate = pw.firstElementChild;
-      if (!s.ph) s.ph = [].slice.call(pw.querySelectorAll(".ph[data-lay]"));
+      if (!s.ph) s.ph = [].slice.call(pw.querySelectorAll(".ph[data-plan]"));
       for (var c = 0; c < s.ph.length; c++) setO(s.ph[c], smooth(s.open));
       if (plate) plate.classList.toggle("gone", exit >= 1 && !flow);
       if (!s.txts) s.txts = pw.querySelectorAll(".txt, .hero-txt");
-      var on = isHero ? INTRO > 0.2 : (flow ? enter > 0.22 : enter > 0.6);
+      var on = isHero ? INTRO > 0.25 : (flow ? enter > 0.22 : enter > 0.6);
       if (s.on !== on) { s.on = on; for (var t = 0; t < s.txts.length; t++) s.txts[t].classList.toggle("on", on); }
     }
     if (sticky) {
@@ -250,53 +205,34 @@
     if (W.innerWidth !== VW) {
       VW = W.innerWidth; VH = W.innerHeight; MOBILE = W.matchMedia("(max-width:760px)").matches;
       fitAll();
-      phs.forEach(function (ph) { ph._W = 0; if (ph._o !== undefined && ph._o < .995) layPlanks(ph); });
       lentaState();
     } else if (!TOUCH) { VH = W.innerHeight; }
     onScroll();
   });
+  /* интро героя: план вычерчивается и заселяется за 1.6 с; пропускается при хэше или прокрутке */
   function runIntro(ts) {
     if (!introStart) introStart = ts;
-    INTRO = smooth((ts - introStart) / 1500);
+    INTRO = smooth((ts - introStart) / 1600);
     update(ts);
-    if (INTRO < 1) requestAnimationFrame(runIntro);
+    if (INTRO < 1) requestAnimationFrame(runIntro); else { INTRO = 1; update(); }
   }
 
-  /* ---------- Кадры каталожных секций: укладка при появлении ---------- */
+  /* ---------- Кадры вне плит (обо мне): раскрытие по видимости ---------- */
   var secPh = phs.filter(function (ph) { return !ph.closest(".pw"); });
-  secPh.forEach(function (ph) { setO(ph, REDUCED ? 1 : 0, true); });
   function openPh(ph) {
-    if (ph._done) return;
-    ph._done = true;
+    if (ph._anim || (ph._o !== undefined && ph._o >= 0.999)) return;
+    ph._anim = true;
     var t0 = 0;
     function step(ts) {
       if (!t0) t0 = ts;
-      var o = clamp((ts - t0) / 1600);
-      setO(ph, smooth(o));
-      if (o < 1) requestAnimationFrame(step);
+      var p = smooth((ts - t0) / 1500);
+      setO(ph, p);
+      if (p < 1) requestAnimationFrame(step); else ph._anim = false;
     }
     requestAnimationFrame(step);
   }
 
-  /* ---------- Петля видео: играет только на экране, после укладки кадра ---------- */
-  var loops = [].slice.call(doc.querySelectorAll("video.loop"));
-  if (loops.length && !REDUCED && "IntersectionObserver" in W) {
-    var vio = new IntersectionObserver(function (es) {
-      es.forEach(function (x) {
-        var v = x.target;
-        if (x.isIntersecting) {
-          if (!v._src) { v._src = true; v.load(); }
-          var p = v.play(); if (p && p.catch) p.catch(function () {});
-        } else { v.pause(); }
-      });
-    }, { threshold: 0.25 });
-    loops.forEach(function (v) {
-      v.addEventListener("playing", function () { v.classList.add("playing"); });
-      vio.observe(v);
-    });
-  }
-
-  /* ---------- Подгонка дисплейных строк: кегль вниз шагом 5%, пока не влезает ---------- */
+  /* ---------- fitText: обе строки заголовка героя одним кеглем ---------- */
   var fits = [].slice.call(doc.querySelectorAll(".fit"));
   function fitOne(el) {
     el.style.fontSize = "";
@@ -309,7 +245,6 @@
     var h1 = doc.querySelector(".hero h1");
     fits.forEach(function (el) { el.style.fontSize = ""; });
     if (MOBILE || !h1) return;
-    /* обе строки заголовка держим одним кеглем: берём меньший из подогнанных */
     var min = Infinity;
     fits.forEach(function (el) { fitOne(el); var s = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize); if (s < min) min = s; });
     fits.forEach(function (el) { el.style.fontSize = min.toFixed(1) + "px"; });
@@ -319,10 +254,10 @@
   var lenta = doc.getElementById("lenta");
   var larrs = [].slice.call(doc.querySelectorAll(".larr"));
   function lentaStep() {
-    var card = lenta ? lenta.querySelector(".ob") : null;
-    if (!card) return 300;
+    var li = lenta.querySelector("li");
+    if (!li) return 300;
     var gap = parseFloat(getComputedStyle(lenta).columnGap || getComputedStyle(lenta).gap) || 0;
-    return card.getBoundingClientRect().width + gap;
+    return li.getBoundingClientRect().width + gap;
   }
   function lentaState() {
     if (!lenta) return;
@@ -330,15 +265,14 @@
     var none = max <= 1;
     larrs.forEach(function (b) {
       b.hidden = none;
-      var dir = parseInt(b.getAttribute("data-dir"), 10);
-      b.disabled = dir < 0 ? lenta.scrollLeft <= 1 : lenta.scrollLeft >= max - 1;
+      var d = +b.getAttribute("data-dir");
+      b.disabled = d < 0 ? lenta.scrollLeft <= 1 : lenta.scrollLeft >= max - 1;
     });
   }
   if (lenta) {
     larrs.forEach(function (b) {
       b.addEventListener("click", function () {
-        var dir = parseInt(b.getAttribute("data-dir"), 10);
-        lenta.scrollBy({ left: dir * lentaStep(), behavior: REDUCED ? "auto" : "smooth" });
+        lenta.scrollBy({ left: lentaStep() * (+b.getAttribute("data-dir")), behavior: REDUCED ? "auto" : "smooth" });
       });
     });
     lenta.addEventListener("scroll", function () { if (!lenta._t) lenta._t = setTimeout(function () { lenta._t = 0; lentaState(); }, 80); }, { passive: true });
@@ -350,67 +284,87 @@
   I18N.en = {
     "meta.title": "Turnkey apartment flipping in Astana - Romance City, Saule Isatayeva",
     "meta.desc": "Turnkey apartment flipping: sourcing a liquid property, renovation, staging and sale through Krisha.kz. Mentoring for flippers, real estate investment from 20 million KZT. 15 years in flipping, about 50 apartments a year. Astana and all of Kazakhstan online. Free consultation.",
-    "nav.fl": "Flipping", "nav.so": "Mentoring", "nav.in": "Investment", "nav.pe": "Resale", "nav.re": "Renovation", "nav.kak": "How it works", "nav.kont": "Contacts",
+    "nav.fl": "Flipping", "nav.so": "Mentoring", "nav.in": "Investment", "nav.ob": "Properties", "nav.kak": "How it works", "nav.me": "About me", "nav.re": "Renovation", "nav.kont": "Contacts",
     "up.aria": "Romance City - to the top", "tel.aria": "Call +7 707 699 7664", "ig.aria": "Romance City on Instagram", "menu.aria": "Menu",
     "lenta.prev": "Previous", "lenta.next": "Next",
     "menu.wa": "Free consultation",
     "menu.note": "Astana, 4 Shamshi Kaldayakov St. Mon-Sat 09:00-20:00. Across Kazakhstan - online.",
-    "hero.alt": "Apartment after flipping: herringbone parquet, chandelier, soft furniture. Before renovation - bare shell",
+    "hero.alt": "Bedroom after renovation: marble partition, wood, soft headboard",
     "hero.kicker": "Astana · <span class=\"m-hide\">all of Kazakhstan </span>online · since 2011",
-    "hero.t1": "Turnkey apartment", "hero.t2": "flipping",
-    "hero.lead": "You buy an apartment from 20&nbsp;million&nbsp;KZT - I source the property, renovate and sell it. 15&nbsp;years in flipping, about 50&nbsp;apartments a year.",
+    "hero.t1": "Apartment flipping", "hero.t2": "your money at work",
+    "hero.lead": "You invest <span class=\"m-hide\">in real estate </span>from 20&nbsp;million&nbsp;KZT - I take on every stage up to the sale<span class=\"m-hide\">: sourcing, renovation, staging and the closing</span>. 15&nbsp;years<span class=\"m-hide\"> of practice</span>, about 50&nbsp;apartments a year.",
     "hero.cta1": "Free consultation", "hero.cta2": "How it works", "hero.ig": "Before and after on Instagram →",
-    "fl.kicker": "Turnkey flipping", "fl.h": "You invest - I run the property up to the sale",
-    "fl.lead": "A liquid apartment, renovation by my own crew, furniture and staging, sale through Krisha.kz. You only come to the closing.",
-    "fl.l1": "Properties from 20&nbsp;million&nbsp;KZT in Astana and across Kazakhstan", "fl.l2": "The apartment is bought and registered in your name", "fl.l3": "Cycle on past properties: 3&#8209;6&nbsp;months",
-    "fl.btn": "Get the terms", "fl.cap": "Before: shell finish. After: renovation, furniture, staging for sale.",
-    "fl.alt": "Apartment after renovation and staging: wood wall panels, chandelier, lighting",
-    "so.kicker": "Mentoring", "so.h": "For those who want to flip themselves or scale up",
-    "so.lead": "We go through your property together: choice, bargaining, renovation, sale. You learn on your own apartment, not on someone else's examples.",
-    "so.l1": "Property check and profit estimate before the purchase", "so.l2": "Negotiations with the seller and buyers", "so.l3": "Crew, budget and renovation control",
-    "so.btn": "Discuss a property", "so.alt": "Saule Isatayeva at a desk with apartment plans in the office, Astana",
-    "in.kicker": "Real estate investment", "in.h": "A clear cycle: buy, improve, sell",
-    "in.lead": "You enter with a budget from 20&nbsp;million&nbsp;KZT and the apartment is registered in your name. I run the property from sourcing to closing and show the costs at every step.",
-    "in.l1": "On past properties: +30&#8209;40% in 3&#8209;6&nbsp;months", "in.l2": "Profit estimate before the purchase, not after", "in.l3": "Budget and timeline report at every stage",
-    "in.note": "The figures are an example from past properties, not a guarantee: the result depends on the property and the market.",
-    "in.btn": "Get an estimate", "in.alt": "Hallway of a finished apartment: built-in wardrobe, herringbone parquet",
-    "pe.kicker": "Apartment resale", "pe.h": "I sell the finished apartment at market price and without downtime",
-    "pe.lead": "Staging, photos, listing and promotion on Krisha.kz, viewings and bargaining - up to the deal at the notary.",
-    "pe.l1": "Furniture, decor and professional photos for the sale", "pe.l2": "I run the viewings and the bargaining myself", "pe.l3": "Deal partner - BAZIS-A agency, 0&nbsp;KZT commission for the client",
-    "pe.btn": "Sell an apartment", "pe.alt": "Gorodskoy Romans residential complex in Astana from above: buildings with green roofs",
-    "ob.kicker": "Properties", "ob.h": "Apartments after renovation and staging",
-    "ob.lead": "Shots from properties in Astana: renovation, furniture, preparation for sale. Real apartments, not renders.",
-    "ob.ig": "More properties on Instagram",
-    "ob1.alt": "Hallway after renovation: white doors, brass hardware, herringbone parquet", "ob2.alt": "Bedroom with a chandelier overlooking new Astana neighbourhoods", "ob3.alt": "Bedroom after staging: bed, mirror, armchair", "ob4.alt": "Grand Monaco lobby: marble floor, reception, golden chandelier", "ob5.alt": "Mirror, armchairs and console in a finished apartment", "ob6.alt": "Keys to a finished apartment in hand, kitchen behind",
+    "strip.a": "Transparent cooperation", "strip.b": "Honest terms", "strip.c": "Real profit", "strip.d": "Over 15 years of hands-on flipping experience",
+    "dk.kicker": "Who it is for", "dk.h": "I do not work with everyone.", "dk.h2": "Properties from 20&nbsp;million&nbsp;KZT.",
+    "dk.lead": "I do not take cheaper properties: they leave no margin for renovation and profit. Three situations people come to me with:",
+    "dk1.t": "Investors", "dk1.d": "You want to earn on real estate without dealing with renovation and sales. You buy - I run the property up to the closing.", "dk1.l": "Turnkey flipping",
+    "dk2.t": "Flippers", "dk2.d": "You already resell apartments and want to scale: more properties, a crew, a higher class of housing.", "dk2.l": "Mentoring",
+    "dk3.t": "Beginners", "dk3.d": "You know nothing about flipping yet but want to learn to do it yourself. We go through your first property together, turnkey.", "dk3.l": "Learning on your property",
+    "fl.kicker": "Turnkey flipping", "fl.h": "A business of reselling apartments", "fl.sub": "A cooperation system that brings profit",
+    "fl.lead": "You invest in real estate - I take on every stage up to the sale: sourcing a liquid apartment, renovation by my own crew, furniture and staging, sale through Krisha.kz.",
+    "fl.l1": "No renovation on your side", "fl.l2": "No searching for buyers", "fl.l3": "No extra hassle - you only come to the closing",
+    "fl.btn": "Get the terms", "fl.link": "Six steps of the system", "fl.cap": "Apartment after renovation and staging. Astana, our property",
+    "fl.alt": "Living room after renovation and staging: herringbone parquet, chandelier, sofa",
+    "so.kicker": "Turnkey mentoring", "so.h": "Want to do it yourself? We go through your property together",
+    "so.lead": "For flippers who are scaling and for beginners who want to learn. You learn on your own apartment, not on someone else's examples.",
+    "so.l1": "Help choosing the apartment and a profit estimate before the purchase", "so.l2": "Renovation crew, budget and control of the work", "so.l3": "Listing for sale and negotiations with buyers",
+    "so.btn": "Discuss a property", "so.cap": "Meeting an investor: going through floor plans and the property estimate",
+    "so.alt": "Saule Isatayeva with a client at a desk in the office: floor plans and residential complex brochures",
+    "in.kicker": "Real estate investment", "in.h": "Invest wisely",
+    "in.lead": "The apartment is bought and registered in your name. I run the property from sourcing to closing and show the costs at every stage. Investors from all over Kazakhstan - online.",
+    "n1": "years in flipping, since 2011", "n2": "apartments a year pass through my hands", "n3": "property threshold we start from",
+    "in.btn": "Get an estimate", "in.alt": "Gorodskoy Romans residential complex in Astana: new buildings, boulevard and sky",
     "kak.kicker": "How it works", "kak.h": "Six steps from choosing the apartment to the profit",
-    "kak.lead": "No renovation on your side, no buyer search, no extra hassle.",
-    "s1.t": "I source the apartment", "s1.d": "I analyse the market and pick a liquid property with price growth potential.",
-    "s2.t": "You buy", "s2.d": "Closing and registration in your name. The apartment is yours from day one.",
-    "s3.t": "You hand me the keys", "s3.d": "Keys and documents - from here I run the property.",
-    "s4.t": "Renovation, furniture, staging", "s4.d": "My own crew, furnishing, decor and preparation for the sale.",
-    "s5.t": "I sell through Krisha.kz", "s5.d": "Listing, promotion, viewings and negotiations with buyers.",
-    "s6.t": "Closing and profit", "s6.d": "You come to the closing and take the result.",
-    "me.kicker": "Saule Isatayeva", "me.h": "15 years in flipping. I only take properties I am sure about",
-    "me.lead": "Since 2011 I have walked the whole path with investors, from sourcing to closing. I do not work with everyone: properties from 20&nbsp;million&nbsp;KZT with clear potential - that keeps the result predictable for both of us.",
-    "st1.n": "since 2011", "st1.t": "in flipping", "st2.n": "~50", "st2.t": "apartments a year", "st3.n": "from 20M KZT", "st3.t": "property threshold",
-    "me.btn": "Free consultation", "me.alt": "Saule Isatayeva, flipper with 15 years of experience",
-    "re.kicker": "Turnkey renovation", "re.h": "Turnkey renovation as a separate service",
-    "re.lead": "Apartments, non-residential and commercial premises: from shell finish to the final result by the same crew that prepares my properties for sale.",
-    "re.l1": "Electrics, plumbing, tiling, painting", "re.l2": "Budget and deadlines are fixed before the start", "re.l3": "Terms of work - by agreement",
-    "re.btn": "Estimate a renovation", "re.ig": "More projects on Instagram →",
-    "re.alt": "Bathroom after renovation: marble, brass fittings, blue vanity",
-    "faq.kicker": "Questions", "faq.h": "What people ask before the first consultation",
+    "kak.lead": "Who does what - honestly and in advance. Your part is the purchase and the closing, mine is everything in between.",
+    "s1.w": "Me", "s1.t": "I source the apartment", "s1.d": "I analyse the market and pick liquid properties with high profit potential.",
+    "s2.w": "You", "s2.t": "You buy and register it in your name", "s2.d": "The apartment is yours from day one.",
+    "s3.w": "You", "s3.t": "You hand me the keys and documents", "s3.d": "After the purchase the property goes into my work.",
+    "s4.w": "Me", "s4.t": "I do the renovation, furniture and staging", "s4.d": "I fully take on the renovation, furnishing, decor and preparation of the apartment for sale.",
+    "s5.w": "Me", "s5.t": "I sell through Krisha.kz", "s5.d": "I list and promote the property on Krisha.kz and other platforms, run the viewings and the bargaining.",
+    "s6.w": "You", "s6.t": "You come to the closing and take the profit", "s6.d": "Only the final deal: you sign the documents and receive the result.",
+    "pz.kicker": "Property cycle", "pz.h": "Five golden steps",
+    "pz.lead": "One cycle - from market analysis to profit. Every property I take goes through it.",
+    "g1.t": "Analysis", "g1.d": "Market and property valuation", "g2.t": "Purchase", "g2.d": "A good deal below market", "g3.t": "Renovation", "g3.d": "Turnkey, premium level", "g4.t": "Sale", "g4.d": "Marketing and a quick deal", "g5.t": "Profit", "g5.d": "+30-40% in 3-6 months<sup>*</sup>",
+    "pz.note": "<sup>*</sup>An example based on past properties, not a guarantee: the result depends on the apartment and the market. The estimate for your property comes before the purchase.",
+    "pe.kicker": "Apartment resale", "pe.h": "I sell through Krisha.kz - fast and at market price",
+    "pe.lead": "I stage and photograph the finished apartment, list and promote it on Krisha.kz and other platforms. I run the viewings and the bargaining myself - up to the deal at the notary.",
+    "pe.p1": "Partnership with BAZIS-A agency", "pe.p2": "No commission: 0&nbsp;KZT for the client",
+    "pe.btn": "Sell an apartment", "pe.cap": "Bedroom of a finished apartment before going on Krisha.kz",
+    "pe.alt": "Bedroom after staging: bed, chandelier, window onto new Astana neighbourhoods",
+    "ob.kicker": "Our properties", "ob.h": "Apartments after renovation and staging",
+    "ob.lead": "Shots from properties in Astana from my Instagram: from shell finish to a finished apartment. Real apartments, not renders.",
+    "ob.ig": "More properties on Instagram",
+    "ob1.alt": "Living room after renovation: herringbone parquet, chandelier, soft sofa", "ob1.c": "Living room after renovation and staging",
+    "ob2.alt": "Hallway after renovation: white doors, brass hardware, parquet", "ob2.c": "Hallway: doors and brass hardware",
+    "ob3.alt": "Bedroom: built-in wardrobe with a mirror, herringbone parquet", "ob3.c": "Bedroom: built-in wardrobe, herringbone parquet",
+    "ob4.alt": "Bathroom after renovation: marble, brass fittings, blue vanity", "ob4.c": "Bathroom: marble and brass",
+    "ob5.alt": "Grand Monaco lobby: marble floor, reception, golden chandelier", "ob5.c": "Grand Monaco lobby",
+    "ob6.alt": "Shell finish: concrete, floor-to-ceiling windows, bags of materials", "ob6.c": "Shell finish: where a property starts",
+    "ob7.alt": "Facade of Gorodskoy Romans from the courtyard: brick, green awnings, flower beds", "ob7.c": "Gorodskoy Romans, Astana",
+    "ob8.alt": "Grand Monaco reception: wood panels, brass lamps", "ob8.c": "Grand Monaco reception",
+    "ob9.alt": "Hands over a residential complex master plan and a brochure on the desk", "ob9.c": "Choosing a property: master plan and layouts",
+    "me.kicker": "Saule Isatayeva", "me.h": "I work for the result. And not with everyone.",
+    "me.lead": "A professional flipper with 15 years of experience. Since 2011 I have walked the whole path with investors: sourcing, renovation, sale, closing. I take properties from 20&nbsp;million&nbsp;KZT with clear potential - that keeps the result predictable for both of us.",
+    "me.q": "Trust is the main thing here: you hand me the keys and documents, I return a finished apartment and the profit. That is why I choose the properties and the people I work with.",
+    "me.l1": "About 50 apartments a year: sourcing, renovation, staging, sale", "me.l2": "Investors from every city of Kazakhstan - we run the property online", "me.l3": "Partnership with BAZIS-A agency: no commission for the client",
+    "me.seal": "years of<br>experience", "me.btn": "Discuss cooperation", "me.alt": "Saule Isatayeva, flipper with 15 years of experience: beige jacket, pearls",
+    "re.kicker": "Turnkey renovation", "re.h": "Turnkey renovation as a separate service", "re.sub": "Your comfort is our work",
+    "re.lead": "The same crew that prepares my properties for sale: from shell finish to the final result, neatly and with quality.",
+    "re.l1": "Apartments", "re.l2": "Non-residential and commercial premises", "re.l3": "Full range of renovation work", "re.l4": "Electrics, plumbing, tiling, painting", "re.l5": "From shell finish to the final result", "re.l6": "Terms of work - by agreement",
+    "re.btn": "Estimate a renovation", "re.ig": "Renovations on Instagram →", "re.cap": "Shell finish: the starting point of every property",
+    "re.alt": "Shell finish of an apartment: concrete, floor-to-ceiling windows, bags of materials",
+    "faq.kicker": "Questions", "faq.h": "What people ask before the first consultation", "faq.alt": "Saule Isatayeva, portrait in a round frame",
     "q1": "How much money do I need to start?", "a1": "I take properties from 20 million KZT. Plus a budget for renovation and staging - we calculate it at the consultation for the specific apartment.",
     "q2": "Whose name is the apartment registered in?", "a2": "Yours. You are the buyer and the owner; I run the property under a contract and bring it to the sale.",
     "q3": "How long is the cycle?", "a3": "On past properties, 3-6 months from purchase to sale. The timing depends on the renovation scope and the market.",
     "q4": "What return can I expect?", "a4": "On past properties, plus 30-40% on the investment. This is an example, not a guarantee: I calculate your apartment before the purchase.",
-    "q5": "I am not in Astana. Can we work online?", "a5": "Yes, I work with investors from any city in Kazakhstan: calls, photo reports and documents online, you come once for the closing.",
+    "q5": "I am not in Astana. Can we work online?", "a5": "Yes, I work with investors from any city in Kazakhstan: calls, photo reports and documents online, you come once - for the closing.",
     "kont.kicker": "Contacts", "kont.h": "Let us start with a free consultation",
     "kont.lead": "Write on WhatsApp or leave your number: I will tell you whether your budget and property fit flipping.",
-    "kont.wa": "Write on WhatsApp", "kont.ig": "Instagram", "kont.2gis": "Office on 2GIS",
-    "kont.addr": "Astana, 4 Shamshi Kaldayakov St.", "kont.hours": "Mon-Sat 09:00-20:00, Sunday off", "kont.online": "Investors from other cities - online",
-    "form.h": "Leave a request", "form.name": "Name", "form.name.ph": "How should I address you", "form.phone": "Phone", "form.err": "Enter a phone number of at least 10 digits.",
-    "form.msg": "Interested in", "form.msg.ph": "Turnkey flipping, budget 25 million, Astana", "form.btn": "Send via WhatsApp", "form.note": "The request opens in WhatsApp with a ready text. Saule replies.",
+    "kont.wa": "Write on WhatsApp", "kont.2gis": "Office on 2GIS",
+    "kont.addr.t": "Address", "kont.addr": "Astana, 4 Shamshi Kaldayakov St.", "kont.hours.t": "Hours", "kont.hours": "Mon-Sat 09:00-20:00, Sunday off", "kont.geo.t": "Geography", "kont.online": "Astana and all of Kazakhstan - online",
+    "form.h": "Leave a request", "form.who": "Saule replies personally", "form.name": "Name", "form.name.ph": "How should I address you", "form.phone": "Phone", "form.err": "Enter a phone number of at least 10 digits.",
+    "form.msg": "Interested in", "form.msg.ph": "Turnkey flipping, budget 25 million, Astana", "form.btn": "Send via WhatsApp", "form.note": "The request opens in WhatsApp with a ready text.",
     "thanks.h": "Thank you!", "thanks.p": "The request has gone to WhatsApp. I will reply during working hours, Mon-Sat 09:00-20:00.",
     "foot.tag": "Turnkey apartment flipping. Astana and all of Kazakhstan.", "foot.copy": "Saule Isatayeva", "sticky.call": "Call"
   };
@@ -476,15 +430,16 @@
   function reveal(el) {
     el.classList.add("in");
     if (el.classList.contains("ph")) openPh(el);
-    [].forEach.call(el.querySelectorAll(".ph[data-lay]"), openPh);
+    [].forEach.call(el.querySelectorAll(".ph[data-plan]"), openPh);
   }
   if ("IntersectionObserver" in W && !REDUCED) {
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (x) { if (!x.isIntersecting) return; reveal(x.target); io.unobserve(x.target); });
     }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
     rv.forEach(function (el) { io.observe(el); });
+    secPh.forEach(function (ph) { io.observe(ph); });
     setTimeout(function () { rv.forEach(function (el) { if (!el.classList.contains("in") && el.getBoundingClientRect().top < W.innerHeight) reveal(el); }); }, 1500);
-  } else { rv.forEach(function (el) { el.classList.add("in"); }); secPh.forEach(function (ph) { setO(ph, 1); }); }
+  } else { rv.forEach(function (el) { el.classList.add("in"); }); secPh.forEach(function (ph) { setO(ph, 1, true); }); }
 
   /* ---------- Форма -> WhatsApp ---------- */
   var form = doc.getElementById("form"), thanks = doc.getElementById("thanks"), ferr = doc.getElementById("ferr");
@@ -520,15 +475,11 @@
     fitAll();
     if (location.hash.length > 1) {
       var id = location.hash.slice(1);
-      goTo(id, true);
-      setTimeout(function () { goTo(id, true); update(); }, 60);
-      setTimeout(function () { goTo(id, true); update(); }, 500);
+      setTimeout(function () { goTo(id, true); update(); }, 40);
     }
     update();
-    lentaState();
     if (INTRO < 1) requestAnimationFrame(runIntro);
   }
-  if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { fitAll(); update(); });
-  if (doc.readyState === "complete") start(); else W.addEventListener("load", start);
-  update();
+  if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(start); else start();
+  W.addEventListener("load", function () { fitAll(); update(); lentaState(); });
 })();
