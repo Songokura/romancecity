@@ -232,7 +232,7 @@ body.menu-open .sticky{display:none}
 
 /* для кого */
 .who{margin-top:44px;border-top:1px solid var(--line-g)}
-.who-row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr) auto;gap:16px 40px;align-items:center;padding:30px 0;border-bottom:1px solid var(--line-g)}
+.who-row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr) 210px;gap:16px 40px;align-items:center;padding:30px 0;border-bottom:1px solid var(--line-g)}
 .who-row h3{font:400 clamp(26px,2.6vw,38px)/1.1 var(--fd)}
 .who-row p{color:#4A383C;font-size:16px}
 
@@ -534,3 +534,4 @@ body.modal-open .sticky{display:none}
 @media(max-width:760px){.hero-fig .cmp{height:min(40svh,380px)}.hero-fig img{object-position:52% 62%}}
 @media(max-width:760px) and (max-height:700px){.hero-fig .cmp{height:min(30svh,300px)}}
 .nw{white-space:nowrap}
+@media(min-width:1001px){.who-row .tlink{justify-self:end}}
