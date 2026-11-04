@@ -541,7 +541,7 @@
     "ob10.c": "Grand Monaco: bathroom",
     "ob10.alt": "Bathroom: marble-look tiles, blue vanity, bathtub",
     "me.h": "Your guide in real estate",
-    "me.lead": "I am Saule Isatayeva, founder of the Romance City real estate agency. I live in this residential complex myself and do renovations here.",
+    "me.lead": "I am Saule Isatayeva, founder of the Romance City real estate agency. I live in the Romance City quarter myself and do renovations here.",
     "me.q": "In real estate it matters not just to buy an apartment but to see its potential before everyone else.",
     "me.l1": "35 years in business, 15 of them in flipping",
     "me.l2": "About 50 apartments a year",
