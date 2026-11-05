@@ -226,6 +226,8 @@
         if (!flow && !REDUCED) {
           var lit = enter >= 0.55 ? true : (enter <= 0.02 ? false : null);
           if (lit !== null) for (var k = 0; k < s.wins.length; k++) setLit(s.wins[k], lit);
+          /* фоновая сцена плиты прочерчивается вместе с загоранием окна, один раз */
+          if (lit === true && !s.drew) { s.drew = true; [].forEach.call(pw.querySelectorAll(".plate-bg"), function (b) { b.classList.add("draw"); }); }
         }
       }
     }

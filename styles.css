@@ -679,3 +679,13 @@ html[lang="kk"] .hero-cta .btn{min-width:0}
   .js .cycle-m{transform:translate(-50%,-50%)}
 }
 @media (prefers-reduced-motion:reduce){.hx2-mull{opacity:0!important}}
+
+/* ---------- фоновые сцены плит (05.11.2026): линейный рисунок в наружном поле со стороны фото и под подписью, за текстом ничего ---------- */
+.svc-in{position:relative;z-index:1}
+.plate-bg{position:absolute;right:0;bottom:0;width:50%;height:100%;z-index:0;opacity:.38;pointer-events:none}
+.plate-bg-l{right:auto;left:0}
+.plate-bg svg{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.plate-bg .d{stroke-width:1.4}
+.js .plate-bg .d{transition-duration:1.6s;transition-delay:calc(var(--i,0)*.22s)}
+.js .plate-bg .f{transition-delay:1.4s}
+@media (max-width:760px){.plate-bg{display:none}}
