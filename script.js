@@ -330,6 +330,12 @@
   /* ---------- Язык: RU в разметке, EN здесь, KZ подгружается отдельным файлом ---------- */
   var I18N = { ru: {} };
   I18N.en = {
+    "hero.ak": "Kitchen-living room in Grand Monaco: crystal chandelier, made-to-order kitchen, herringbone parquet",
+    "hero.ab": "Bedroom in Grand Monaco: upholstered bed, window to the courtyard",
+    "hero.r0": "Living room",
+    "hero.r1": "Kitchen",
+    "hero.r2": "Bedroom",
+    "hero.zk": "Grand Monaco, Astana: apartment after renovation and furnishing",
     "meta.title": "Turnkey Apartment Flipping in Astana - Saule Isatayeva | Romance City",
     "meta.desc": "Turnkey apartment flipping in Astana: I select an apartment for your budget from 30 million tenge, renovate and furnish it, and sell it. The apartment is registered in your name, no prepayment. Renovation 1-2 months, full cycle from 3 months. Investors from other cities are handled online.",
     "up.aria": "Romance City - to the top",
@@ -553,4 +559,33 @@
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(start); else start();
   W.addEventListener("load", function () { fitAll(); measureHero(); update(); lentaState(); });
 
+
+  /* ---------- Герой: створки распахиваются на загрузке, за окном самоидущее слайдшоу комнат (решение владельца 05.11.2026: без смены по прокрутке) ---------- */
+  (function () {
+    var hx = doc.getElementById("top"), win = doc.getElementById("win"), cap = doc.getElementById("cap");
+    if (!hx || !win || !hx.classList.contains("hx2")) return;
+    var rooms = cap ? [].slice.call(cap.querySelectorAll(".hx2-room b")) : [];
+    var dots = cap ? [].slice.call(cap.querySelectorAll(".hx2-dots i")) : [];
+    var N = 3, cur = 0, timer = null, visible = true;
+    function show(i) {
+      cur = i;
+      win.style.setProperty("--p", (i / (N - 1)).toFixed(4));
+      for (var k = 0; k < rooms.length; k++) rooms[k].classList.toggle("is-on", k === i);
+      for (k = 0; k < dots.length; k++) dots[k].classList.toggle("is-on", k === i);
+    }
+    show(0);
+    function tick() { if (visible && !doc.hidden) show((cur + 1) % N); }
+    function start() { if (!timer && !REDUCED) timer = setInterval(tick, 4500); }
+    if ("IntersectionObserver" in W) {
+      new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.35 }).observe(win);
+    }
+    if (REDUCED || location.hash.length > 1 || W.pageYOffset > 80) { hx.classList.add("on"); start(); return; }
+    var done = false;
+    function go() {
+      if (done) return; done = true;
+      W.requestAnimationFrame(function () { W.requestAnimationFrame(function () { hx.classList.add("on"); setTimeout(start, 2600); }); });
+    }
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(go);
+    setTimeout(go, 600);
+  })();
 })();
