@@ -1,4 +1,4 @@
-/* Romance City. Ванильный JS: плиты, герой «окна зажигаются», меню, якоря, язык, лента, видео, форма в WhatsApp. */
+/* Romance City. Ванильный JS: плиты, герой «окно загорается, камера входит в дом», окна от прокрутки, меню, якоря, язык, лента, видео, форма в WhatsApp. */
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement, W = window;
@@ -122,26 +122,59 @@
     }, doc.body.classList.contains("menu-open") ? 120 : 0);
   });
 
-  /* ---------- Герой: стена окон. Центральное окно по скроллу растёт до краёв экрана ---------- */
-  var hero = doc.querySelector(".hero"), winc = doc.getElementById("winc"), herobig = doc.getElementById("herobig");
-  var IW = 1500, IH = 2000; /* размер кадра центрального окна */
-  function offsetIn(el, top) {
-    var x = 0, y = 0;
-    while (el && el !== top) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
-    return { x: x, y: y };
-  }
+  /* ---------- Герой: дом в сумерках, одно окно горит. По прокрутке камера входит в окно (--o 0..1) ---------- */
+  var hero = doc.querySelector(".hero"), facade = doc.getElementById("facade"), herobig = doc.getElementById("herobig");
+  var heroTxt = doc.querySelector(".hero-txt");
+  /* горящее окно на кадре фасада: доли ширины и высоты кадра (десктопный кадр и мобильный кроп) */
+  var WIN_D = { l: 0.832, t: 0.536, r: 0.864, b: 0.589 }, WIN_M = { l: 0.6975, t: 0.3657, r: 0.755, b: 0.4629 };
+  var IW = 1500, IH = 2000; /* кадр гостиной */
+  var herobg = doc.getElementById("herobg");
   function measureHero() {
-    if (!hero || !winc || !herobig || MOBILE) return;
-    var pwid = hero.clientWidth, phei = hero.clientHeight;
-    var o = offsetIn(winc, hero), ww = winc.offsetWidth, wh = winc.offsetHeight;
-    var ss = Math.max(ww / IW, wh / IH), sf = Math.max(pwid / IW, phei / IH);
-    hero.style.setProperty("--wt", o.y + "px");
-    hero.style.setProperty("--wl", o.x + "px");
-    hero.style.setProperty("--wr", (pwid - o.x - ww) + "px");
-    hero.style.setProperty("--wb", (phei - o.y - wh) + "px");
-    hero.style.setProperty("--k", (ss / sf).toFixed(5));
-    hero.style.setProperty("--dx", ((o.x + ww / 2) - pwid / 2).toFixed(1) + "px");
-    hero.style.setProperty("--dy", ((o.y + wh / 2) - phei / 2).toFixed(1) + "px");
+    if (!hero || !facade || !herobg) return;
+    var pw = hero.clientWidth, ph = hero.clientHeight;
+    var hr = hero.getBoundingClientRect(), br = herobg.getBoundingClientRect();
+    var bw = br.width, bh = br.height;
+    if (!pw || !ph || !bw || !bh) return;
+    var mob = (facade.currentSrc || "").indexOf("-m.") > -1;
+    var WIN = mob ? WIN_M : WIN_D;
+    var nw = facade.naturalWidth || (mob ? 800 : 1280), nh = facade.naturalHeight || (mob ? 1400 : 2276);
+    var pos = getComputedStyle(facade).objectPosition.split(" ");
+    var px = parseFloat(pos[0]) / 100, py = parseFloat(pos[1] || "50%") / 100;
+    if (isNaN(px)) px = 0.5; if (isNaN(py)) py = 0.5;
+    var sc = Math.max(bw / nw, bh / nh), dw = nw * sc, dh = nh * sc;
+    var ox = (bw - dw) * px, oy = (bh - dh) * py;
+    /* окно в координатах ленты фасада (для подсветки) и в координатах героя (для кадра гостиной) */
+    var gl = ox + WIN.l * dw, gt = oy + WIN.t * dh, ww = (WIN.r - WIN.l) * dw, wh = (WIN.b - WIN.t) * dh;
+    var wl = gl + (br.left - hr.left), wt = gt + (br.top - hr.top);
+    var cx = wl + ww / 2, cy = wt + wh / 2;
+    var ss = Math.max(ww / IW, wh / IH), sf = Math.max(pw / IW, ph / IH);
+    var st = hero.style;
+    st.setProperty("--gl", gl.toFixed(1) + "px"); st.setProperty("--gt", gt.toFixed(1) + "px");
+    st.setProperty("--wl", wl.toFixed(1) + "px"); st.setProperty("--wt", wt.toFixed(1) + "px");
+    st.setProperty("--wr", (pw - wl - ww).toFixed(1) + "px"); st.setProperty("--wb", (ph - wt - wh).toFixed(1) + "px");
+    st.setProperty("--ww", ww.toFixed(1) + "px"); st.setProperty("--wh", wh.toFixed(1) + "px");
+    st.setProperty("--wx", ((gl + ww / 2) / bw * 100).toFixed(2) + "%"); st.setProperty("--wy", ((gt + wh / 2) / bh * 100).toFixed(2) + "%");
+    st.setProperty("--k", (ss / sf).toFixed(5));
+    st.setProperty("--iw", (IW * sf).toFixed(1) + "px"); st.setProperty("--ih", (IH * sf).toFixed(1) + "px");
+    st.setProperty("--dx", (cx - pw / 2).toFixed(1) + "px"); st.setProperty("--dy", (cy - ph / 2).toFixed(1) + "px");
+  }
+  if (facade) { if (facade.complete) measureHero(); else facade.addEventListener("load", measureHero); }
+
+  /* ---------- Окна: загораются от прокрутки. В sticky-плитах - по --enter плиты (0.55), остальные - по видимости (50%);
+     гаснут, только когда окно целиком ушло из экрана, - так эффект повторяется при возврате, но не мигает у границы ---------- */
+  var allWins = [].slice.call(doc.querySelectorAll(".win"));
+  function setLit(w, on) { if (w._lit === on) return; w._lit = on; w.classList.toggle("lit", on); }
+  function inStickyPlate(w) { var pw = w.closest(".pw"); return !!pw && !flowPlate(pw); }
+  if (REDUCED || !("IntersectionObserver" in W)) allWins.forEach(function (w) { setLit(w, true); });
+  else {
+    var ioWin = new IntersectionObserver(function (es) {
+      es.forEach(function (x) {
+        if (inStickyPlate(x.target)) return;
+        if (x.intersectionRatio >= 0.5) setLit(x.target, true);
+        else if (!x.isIntersecting) setLit(x.target, false);
+      });
+    }, { threshold: [0, 0.5] });
+    allWins.forEach(function (w) { ioWin.observe(w); });
   }
 
   /* ---------- Плиты ---------- */
@@ -165,9 +198,11 @@
     }
     for (i = 0; i < pws.length; i++) {
       var pw = pws[i], r = rects[i], s = st[i];
+      /* плита далеко от экрана: считаем один раз на сторону (ниже/выше), чтобы прыжок по якорю не оставил её в старом состоянии */
       var near = r.bottom > -H * 0.5 && r.top < H * 1.5;
-      if (!near) { if (s.out["--enter"] !== undefined && !s.reset) s.reset = true; else if (s.reset) continue; }
-      else s.reset = false;
+      var side = near ? 0 : (r.top > 0 ? 1 : -1);
+      if (!near && s.side === side) continue;
+      s.side = side;
       var flow = flowPlate(pw);
       var enter = clamp(1 - r.top / H);
       var stay = r.height > H ? clamp(-r.top / (r.height - H)) : 0;
@@ -177,15 +212,21 @@
       put(pw, s, "--exit", exit.toFixed(4));
       var plate = pw.firstElementChild;
       if (isHero && plate) {
-        var o = flow ? 0 : smooth((stay - 0.06) / 0.94);
+        var o = flow ? 0 : smooth((stay - 0.04) / 0.96);
         put(plate, s, "--o", o.toFixed(4));
-        if (herobig) herobig.classList.toggle("live", o > 0.001);
+        var flown = o > 0.45;
+        if (s.flown !== flown) { s.flown = flown; plate.classList.toggle("flown", flown); }
       }
       if (plate) plate.classList.toggle("gone", exit >= 1 && !flow);
-      if (!s.txts) s.txts = pw.querySelectorAll(".txt");
+      if (!s.txts) { s.txts = pw.querySelectorAll(".txt"); s.wins = pw.querySelectorAll(".win"); }
       if (!isHero) {
         var on = flow ? enter > 0.22 : enter > 0.6;
         if (s.on !== on) { s.on = on; for (var t = 0; t < s.txts.length; t++) s.txts[t].classList.toggle("on", on); }
+        /* окно плиты: загорается на 0.55 въезда, гаснет, когда плита снова целиком под экраном */
+        if (!flow && !REDUCED) {
+          var lit = enter >= 0.55 ? true : (enter <= 0.02 ? false : null);
+          if (lit !== null) for (var k = 0; k < s.wins.length; k++) setLit(s.wins[k], lit);
+        }
       }
     }
     if (sticky) {
@@ -206,21 +247,12 @@
     onScroll();
   });
 
-  /* интро: окна поднимаются и загораются одно за другим, затем текст. Пропускается при хэше или прокрутке */
-  var wins = [].slice.call(doc.querySelectorAll(".wall .win"));
-  var heroTxt = doc.querySelector(".hero-txt");
+  /* интро: текст поднимается, затем окно на фасаде загорается и в нём видна гостиная. Пропускается при хэше или прокрутке */
   function runIntro() {
-    var order = [".w2", ".w4", ".w3"], delays = [380, 680, 1000];
-    wins.forEach(function (w) { w.classList.add("show"); });
-    if (INTRO_SKIP) {
-      order.forEach(function (sel) { var w = doc.querySelector(".wall " + sel); if (w) w.classList.add("lit"); });
-      if (heroTxt) heroTxt.classList.add("on");
-      return;
-    }
-    order.forEach(function (sel, i) {
-      setTimeout(function () { var w = doc.querySelector(".wall " + sel); if (w) w.classList.add("lit"); }, delays[i]);
-    });
-    setTimeout(function () { if (heroTxt) heroTxt.classList.add("on"); }, 120);
+    if (!hero) return;
+    if (INTRO_SKIP) { hero.classList.add("lit"); if (heroTxt) heroTxt.classList.add("on"); return; }
+    setTimeout(function () { if (heroTxt) heroTxt.classList.add("on"); }, 150);
+    setTimeout(function () { hero.classList.add("lit"); }, 1050);
   }
 
   /* ---------- fitText: обе строки заголовка героя одним кеглем ---------- */
@@ -307,8 +339,8 @@
     "hero.kicker": "ASTANA · TURNKEY FLIPPING · SINCE 2011",
     "hero.t1": "Turnkey apartment flipping in Astana",
     "hero.t2": "from bare walls to a profitable sale",
-    "hero.lead": "You buy an apartment in your own name in a new building in Astana. My team and I renovate it in 1-2&nbsp;months, furnish it and sell it. <span class=\"m-less\">The full cycle takes from 3&nbsp;months, and you come only twice: to buy and to sell.</span>",
-    "hero.cta1": "Get an estimate on WhatsApp", "hero.cta2": "How it works", "hero.ig": "My apartments on Instagram →",
+    "hero.lead": "You buy an apartment in your own name in a new building in Astana. My team and I renovate it in <span class=\"nw\">1-2&nbsp;months</span>, furnish it and sell it. <span class=\"m-less\">The full cycle takes from 3&nbsp;months, and you come only twice: to buy and to sell.</span>",
+    "hero.cta1": "Get an estimate on WhatsApp", "hero.cta2": "How it works", "hero.ig": "My apartments on Instagram →", "hero.hint": "Scroll: step inside the apartment",
     "wall.aria": "Apartments after renovation",
     "hero.a1": "Facade of the Gorodskoy Romans residential quarter in Astana",
     "hero.a2": "Kitchen-living room after renovation in Evolution: ring chandelier, grey sofa",
@@ -521,18 +553,4 @@
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(start); else start();
   W.addEventListener("load", function () { fitAll(); measureHero(); update(); lentaState(); });
 
-  /* ---------- Окна: эффект проигрывается один раз и целиком - при первом наведении курсора; на тач-экранах при первом появлении ---------- */
-  (function () {
-    var all = [].slice.call(doc.querySelectorAll(".win"));
-    function lightOnce(w) { if (!w.classList.contains("lit")) w.classList.add("lit"); }
-    if (REDUCED) { all.forEach(lightOnce); return; }
-    if (W.matchMedia("(hover:hover) and (pointer:fine)").matches) {
-      all.forEach(function (w) { w.addEventListener("pointerenter", function () { lightOnce(w); }, { once: true }); });
-    } else if ("IntersectionObserver" in W) {
-      var io = new IntersectionObserver(function (es) {
-        es.forEach(function (e) { if (e.isIntersecting) { lightOnce(e.target); io.unobserve(e.target); } });
-      }, { threshold: 0.55 });
-      all.forEach(function (w) { io.observe(w); });
-    } else all.forEach(lightOnce);
-  })();
 })();

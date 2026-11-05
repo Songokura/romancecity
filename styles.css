@@ -26,7 +26,7 @@ figure{margin:0}
 
 /* ---------- типографика ---------- */
 .kicker{font:600 11px/1.3 var(--ft);letter-spacing:.17em;text-transform:uppercase;color:var(--wine);margin:0 0 16px}
-.h1{font-size:clamp(34px,min(4.5vw,7.2svh),64px);line-height:1.06;color:var(--deep)}
+.h1{line-height:1.06;color:var(--deep)}
 .h2{font-size:clamp(30px,3.3vw,46px);line-height:1.12}
 .lead{font-size:17px;line-height:1.55;color:var(--ink);margin:18px 0 0}
 .note{font-size:15px;line-height:1.5;color:var(--mute);margin:18px 0 0;padding-left:14px;border-left:2px solid var(--wine)}
@@ -132,60 +132,81 @@ body.menu-open{overflow:hidden}
 .sec{position:relative;z-index:2;background:var(--paper);padding:96px 0}
 .mull{background-image:linear-gradient(90deg,rgba(140,67,82,.07) 1px,transparent 1px);background-size:25% 100%;background-position:12.5% 0}
 
-/* ---------- герой: текст слева, одно окно-арка справа; без анимации прокрутки (решение владельца 05.11.2026) ---------- */
-.hero{position:relative;z-index:2;background:var(--paper);overflow:hidden}
-.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 70% at 78% 60%,rgba(180,199,214,.5),rgba(180,199,214,0) 70%);pointer-events:none}
-.hero-in{position:relative;z-index:2;max-width:var(--wrap);margin:0 auto;min-height:100svh;padding:calc(var(--hdr) + 40px) var(--gut) 56px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(40px,5vw,96px);align-items:center}
-.hero-txt{min-width:0;text-align:left}
+/* ---------- герой: дом в сумерках, одно окно горит; по прокрутке (--o 0..1) камера входит в окно, гостиная заполняет экран ---------- */
+.hero{--o:0;--wl:50%;--wt:50%;--wr:50%;--wb:50%;--ww:0px;--wh:0px;--wx:50%;--wy:50%;--k:1;--dx:0px;--dy:0px;--iw:100%;--ih:100%;background:var(--paper)}
+.hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:var(--sky2)}
+.hero-bg picture{display:block;position:absolute;inset:0}
+.hero-facade{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 49%;display:block;max-width:none;transform:scale(calc(1 + .16*var(--o)));transform-origin:var(--wx) var(--wy);will-change:transform}
+.hero-haze{position:absolute;inset:0;background:linear-gradient(180deg,rgba(214,223,231,.8) 0%,rgba(190,206,220,.6) 48%,rgba(235,227,216,.92) 100%);opacity:calc(1 - .35*var(--o))}
+.hero-haze::after{content:"";position:absolute;inset:0;background:radial-gradient(58% 52% at 50% 46%,rgba(245,239,230,.66),rgba(245,239,230,0) 72%)}
+/* горящее окно: тёплая подсветка на фасаде, координаты считает JS по кадру */
+.hero-glow{position:absolute;left:var(--gl,var(--wl));top:var(--gt,var(--wt));width:var(--ww);height:var(--wh);border-radius:2px;opacity:calc(1 - 3*var(--o));pointer-events:none}
+.hero-glow::before{content:"";position:absolute;inset:-2px;border-radius:3px;background:#FFE4B8;box-shadow:0 0 0 1px rgba(255,240,214,.95),0 0 22px 8px rgba(255,222,176,.8),0 0 70px 28px rgba(255,214,160,.5),0 0 160px 60px rgba(255,214,160,.22);opacity:0;transform:scale(.8)}
+.hero.lit .hero-glow::before{animation:glowOn 1.6s var(--ease) forwards}
+@keyframes glowOn{0%{opacity:0;transform:scale(.8)}45%{opacity:1;transform:scale(1.12)}100%{opacity:.95;transform:none}}
+.hero-in{position:relative;z-index:2;height:100%;max-width:1180px;margin:0 auto;padding:calc(var(--hdr) + 16px) var(--gut) 56px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.hero-txt{transform:translateY(calc(var(--o)*-90px));opacity:calc(1 - var(--o)*5.5);flex:0 0 auto;width:100%}
+.hero.flown .hero-txt{pointer-events:none}
 .hero-txt > *{opacity:0;transform:translateY(18px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
 .hero-txt.on > *{opacity:1;transform:none}
 .hero-txt.on > :nth-child(2){transition-delay:.1s}
-.hero-txt.on > :nth-child(3){transition-delay:.2s}
-.hero-txt.on > :nth-child(4){transition-delay:.3s}
-.hero-txt.on > :nth-child(5){transition-delay:.4s}
+.hero-txt.on > :nth-child(3){transition-delay:.22s}
+.hero-txt.on > :nth-child(4){transition-delay:.34s}
+.hero-txt.on > :nth-child(5){transition-delay:.46s}
 .hero-kicker{margin-bottom:18px}
-.h1 .fit{display:inline-block}
-.hero-lead{max-width:none;margin:20px 0 0;font-size:clamp(15px,1.15vw,18px)}
-.hero-cta{display:flex;justify-content:flex-start;gap:12px;margin-top:28px;flex-wrap:wrap}
-.hero-cta .btn{min-width:0}
-/* окно-арка: как арочные окна «Городского романса»; за ним сдвинутый контур второй арки, под ним подоконник */
-.hero-arch{position:relative;margin:0;justify-self:center;width:min(100%,calc((100svh - var(--hdr) - 170px) * .75),500px)}
-.hero-arch::before{content:"";position:absolute;top:-26px;right:-26px;left:26px;height:calc(100% - 64px);border:1.5px solid rgba(180,199,214,.95);border-radius:999px 999px 10px 10px;pointer-events:none}
-.win-arch{position:relative;z-index:1;aspect-ratio:3/4;border-radius:999px 999px var(--r) var(--r);box-shadow:0 30px 60px -36px rgba(79,29,38,.45)}
-.win-arch img{object-position:50% 55%}
-.win-arch .fr::after{top:37.5%}
-.hero-arch .sill{position:relative;z-index:1;display:block;height:10px;margin:0 -16px;background:var(--wine);border-radius:3px}
-.hero-arch figcaption{margin-top:14px;text-align:center;font-size:13px;line-height:1.45;color:var(--mute)}
-@media (max-width:1100px) and (min-width:761px){
-  .hero-in{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:40px}
-}
-@media (max-width:760px){
-  .hero-kicker{font-size:11px;letter-spacing:.1em;margin-bottom:12px}
-  /* лид героя на телефоне полностью: скрытые куски лида - претензия 03.11.2026 */
-  .hero-in{display:flex;flex-direction:column;align-items:stretch;min-height:0;padding:calc(var(--hdr) + 14px) var(--gut) 28px;gap:0}
-  .hero-arch{order:-1;width:auto;align-self:center;margin:0 0 22px}
-  .win-arch{height:min(32svh,270px);width:auto;aspect-ratio:3/4}
-  .hero-arch::before{top:-12px;right:-12px;left:12px;height:calc(100% - 22px)}
-  .hero-arch .sill{height:7px;margin:0 -10px}
-  .hero-arch figcaption{display:none}
-  .hero-txt{text-align:center}
-  .h1{font-size:clamp(30px,8.6vw,40px)}
-  .hero-lead{font-size:16px;margin-top:14px}
-  .hero-cta{flex-direction:column;align-items:stretch;width:100%;gap:10px;margin-top:20px}
-  .hero-cta .btn{width:100%}
-  .iglink{margin-top:16px}
-}
-@media (max-width:760px) and (max-height:700px){
-  .win-arch{height:21svh}
-  .hero-arch{margin-bottom:16px}
-  .h1{font-size:clamp(26px,7.8vw,34px)}
-  .hero-lead{font-size:15px;margin-top:10px}
-  .hero-cta{margin-top:14px}
-}
+.hero .h1{font-size:clamp(38px,min(4.4vw,8svh),66px);line-height:1.06;text-wrap:balance}
+.hero .h1 .l1,.hero .h1 .l2{display:block}
+.hero .h1 .l2{color:var(--wine);font-weight:400;font-size:.76em;margin-top:.18em}
+.hero-lead{max-width:880px;margin:22px auto 0;font-size:clamp(15px,1.2vw,18px)}
+.hero-cta{display:flex;justify-content:center;gap:12px;margin-top:28px;flex-wrap:wrap}
+.hero-cta .btn{min-width:250px}
+/* подсказка прокрутки: тонкая линия, ползущая вниз */
+.hero-hint{position:absolute;left:0;right:0;bottom:22px;display:flex;flex-direction:column;align-items:center;gap:8px;font:500 12px/1.3 var(--ft);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);opacity:calc(1 - 4*var(--o));pointer-events:none}
+.hero-hint i{display:block;width:1px;height:38px;background:linear-gradient(180deg,var(--wine),transparent);background-size:100% 200%;animation:hintDown 2.2s var(--ease) infinite}
+@keyframes hintDown{0%{background-position:0 100%;opacity:0}30%{opacity:1}100%{background-position:0 -100%;opacity:0}}
+/* камера входит в окно: гостиная вырезана по прямоугольнику окна и растёт до краёв экрана */
+.hero-big{position:absolute;inset:0;z-index:5;margin:0;visibility:hidden;opacity:0;clip-path:inset(calc(var(--wt)*(1 - var(--og))) calc(var(--wr)*(1 - var(--og))) calc(var(--wb)*(1 - var(--og))) calc(var(--wl)*(1 - var(--og))) round calc(2px*(1 - var(--og))));will-change:clip-path;transition:opacity 1s var(--ease),visibility 0s}
+.hero.lit .hero-big{visibility:visible;opacity:1}
+/* кадр гостиной целиком, размером «покрыть экран», центр в центре экрана; при --o 0 уменьшен до окна (--k) и сдвинут в его центр */
+.hero-big img{position:absolute;left:50%;top:50%;width:var(--iw,100%);height:var(--ih,100%);display:block;max-width:none;transform:translate(calc(-50% + var(--dx)*(1 - var(--og))),calc(-50% + var(--dy)*(1 - var(--og)))) scale(calc(var(--k) + (1 - var(--k))*var(--og)));transform-origin:50% 50%;will-change:transform}
+.hero-bigcap{position:absolute;left:var(--gut);bottom:26px;max-width:420px;padding:10px 14px;border-radius:var(--r);background:rgba(245,239,230,.86);font:400 13px/1.45 var(--ft);color:var(--ink);opacity:calc((var(--og) - .9)*10)}
 @media (max-height:700px) and (min-width:761px){
-  .hero-lead{font-size:15px;margin-top:12px}
+  .hero .h1{font-size:clamp(34px,min(4vw,7.6svh),56px)}
+  .hero-lead{font-size:15px;margin-top:14px}
   .hero-cta{margin-top:18px}
   .hero-cta .btn{height:48px}
+  .iglink{margin-top:12px}
+  .hero-hint{display:none}
+}
+@media (max-width:760px){
+  /* телефон: герой в один экран, без сцены прокрутки (§4.5 В). Сверху лента фасада в сумерках с горящим окном, под ней текст на бумаге */
+  .pw-hero{height:auto;min-height:100svh}
+  .hero{position:relative;height:auto;min-height:100svh;transform:none;border-radius:0;--o:0;display:flex;flex-direction:column;padding-top:var(--hdr)}
+  .hero-bg{position:relative;inset:auto;flex:0 0 auto;height:clamp(150px,32svh,300px)}
+  .hero-facade{object-position:50% 34%;transform:none;will-change:auto}
+  .hero-haze{background:linear-gradient(180deg,rgba(214,223,231,.5) 0%,rgba(196,211,224,.3) 55%,var(--paper) 100%)}
+  .hero-haze::after{display:none}
+  .hero-in{flex:1 1 auto;min-height:0;padding:16px var(--gut) 28px;justify-content:flex-start}
+  .hero-txt{transform:none;opacity:1}
+  .hero .hero-kicker{font-size:11px;letter-spacing:.08em;margin-bottom:12px}
+  /* лид героя на телефоне полностью: скрытые куски лида - претензия 03.11.2026 */
+  .hero .h1{font-size:clamp(30px,8.6vw,40px);line-height:1.06}
+  .hero .h1 .l2{font-size:.84em}
+  .hero-lead{font-size:16px;margin-top:14px;max-width:none}
+  .hero-cta{flex-direction:column;align-items:stretch;width:100%;gap:10px;margin-top:20px}
+  .hero-cta .btn{width:100%;min-width:0}
+  .iglink{margin-top:16px}
+  .hero-hint,.hero-bigcap{display:none}
+  .hero-big{will-change:auto}
+  .hero-big img{will-change:auto}
+}
+@media (max-width:760px) and (max-height:700px){
+  .hero-bg{height:22svh}
+  .hero-in{padding-top:12px}
+  .hero .h1{font-size:clamp(26px,7.8vw,34px)}
+  .hero-lead{font-size:15px;margin-top:10px}
+  .hero-cta{margin-top:14px}
+  .hero-cta .btn{height:50px}
 }
 
 /* ---------- шаги ---------- */
@@ -221,9 +242,7 @@ body.menu-open{overflow:hidden}
 .media{display:flex;flex-direction:column;align-items:center;gap:14px}
 .win-p{aspect-ratio:3/4;height:min(72svh,640px);width:auto;max-width:100%}
 .media figcaption{font-size:13px;line-height:1.45;color:var(--mute);text-align:center;max-width:420px}
-/* окно плиты загорается по --enter: вуаль уходит на .4-.8, рама гаснет к 1 */
-
-
+/* окно плиты загорается по --enter плиты (JS вешает .lit на 0.55 въезда) */
 .win-v .vloop{opacity:0;transition:opacity .6s}
 .win-v.is-live .vloop{opacity:1}
 @media (max-height:760px) and (min-width:761px){
@@ -432,25 +451,26 @@ html[lang="kk"] .hero-cta .btn{min-width:0}
 
 /* ---------- движение выключено ---------- */
 @media (prefers-reduced-motion:reduce){
-  .win .veil,.win .glow,.win .fr,.fact,.hero-txt > *,.svc .txt > *,.js .rv,.wall .win,.btn,.menu{transition:none!important;animation:none!important}
-  .wall .win{opacity:1;transform:none}
+  .win .veil,.win .glow,.win .fr,.fact,.hero-txt > *,.svc .txt > *,.js .rv,.hero-big,.hero-glow::before,.hero-hint i,.btn,.menu{transition:none!important;animation:none!important}
+  .hero-glow::before{opacity:.95;transform:none}
+  .hero-hint{display:none}
   .win.lit::after{animation:none;opacity:.35}
   .plate{transform:none}
 }
-/* казахский заголовок героя длиннее русского: на телефоне кегль меньше, чтобы кнопка была в первом экране (приёмка 05.11.2026) */
-@media (max-width:760px){html[lang="kk"] .hero .h1{font-size:clamp(25px,7.2vw,32px);line-height:1.12}}
-@media (max-width:760px) and (max-height:700px){html[lang="kk"] .hero .h1{font-size:clamp(23px,6.6vw,28px)}}
 
 .nw{white-space:nowrap}
 
-/* заголовок героя: переносится естественно, без подгонки кегля под колонку; вторая строка - светлым бордо (приёмка 05.11.2026) */
-.hero .h1{font-size:clamp(38px,min(3.9vw,7svh),60px);line-height:1.08;text-wrap:balance}
-.hero .h1 .l1,.hero .h1 .l2{display:block}
-.hero .h1 .l2{color:var(--wine);font-weight:400;margin-top:.12em}
-/* окно до наведения: прохладная вуаль, но кадр читается */
+/* окно до загорания: прохладная вуаль, кадр читается */
 .win .veil{background:linear-gradient(180deg,rgba(176,196,214,.5),rgba(112,134,158,.6))}
 .win-dark .veil{background:linear-gradient(180deg,rgba(176,196,214,.58),rgba(100,120,144,.68))}
-@media (max-width:760px){.hero .h1{font-size:clamp(30px,8.6vw,40px);line-height:1.06}}
-@media (max-width:760px) and (max-height:700px){.hero .h1{font-size:clamp(26px,7.8vw,34px)}}
+/* фасад объекта: три окна загораются с шагом */
+.facade .win:nth-child(2) .veil,.facade .win:nth-child(2) .glow,.facade .win:nth-child(2) .fr,.facade .win:nth-child(2) .fr::before,.facade .win:nth-child(2) .fr::after{transition-delay:.18s}
+.facade .win:nth-child(3) .veil,.facade .win:nth-child(3) .glow,.facade .win:nth-child(3) .fr,.facade .win:nth-child(3) .fr::before,.facade .win:nth-child(3) .fr::after{transition-delay:.36s}
+.facade .win:nth-child(2).lit .glow,.facade .win:nth-child(2).lit::after{animation-delay:.18s}
+.facade .win:nth-child(3).lit .glow,.facade .win:nth-child(3).lit::after{animation-delay:.36s}
+/* казахский заголовок героя длиннее русского: на телефоне кегль меньше, чтобы кнопка была в первом экране */
 @media (max-width:760px){html[lang="kk"] .hero .h1{font-size:clamp(25px,7.2vw,32px);line-height:1.12}}
 @media (max-width:760px) and (max-height:700px){html[lang="kk"] .hero .h1{font-size:clamp(23px,6.6vw,28px)}}
+
+/* калибровка героя (приёмка 05.11.2026): текст уходит к --o .18, только потом гостиная растёт из окна; подпись - в самом конце */
+.hero{--og:clamp(0,calc((var(--o,0) - .18)/.82),1)}
