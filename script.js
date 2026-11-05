@@ -312,6 +312,7 @@
     "wall.aria": "Apartments after renovation",
     "hero.a1": "Facade of the Gorodskoy Romans residential quarter in Astana",
     "hero.a2": "Kitchen-living room after renovation in Evolution: ring chandelier, grey sofa",
+    "hero.cap": "Grand Monaco, Astana: living room after renovation and furnishing",
     "hero.a3": "Living room after renovation in Grand Monaco: crystal chandelier, light sofa, herringbone parquet, large window",
     "hero.a4": "Living room of a finished apartment: beige sofa, floor-length curtains, crystal chandelier",
     "hero.a5": "Bedroom in Grand Monaco: bed with an upholstered headboard, window to the courtyard",
@@ -519,4 +520,19 @@
   }
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(start); else start();
   W.addEventListener("load", function () { fitAll(); measureHero(); update(); lentaState(); });
+
+  /* ---------- Окна: эффект проигрывается один раз и целиком - при первом наведении курсора; на тач-экранах при первом появлении ---------- */
+  (function () {
+    var all = [].slice.call(doc.querySelectorAll(".win"));
+    function lightOnce(w) { if (!w.classList.contains("lit")) w.classList.add("lit"); }
+    if (REDUCED) { all.forEach(lightOnce); return; }
+    if (W.matchMedia("(hover:hover) and (pointer:fine)").matches) {
+      all.forEach(function (w) { w.addEventListener("pointerenter", function () { lightOnce(w); }, { once: true }); });
+    } else if ("IntersectionObserver" in W) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { lightOnce(e.target); io.unobserve(e.target); } });
+      }, { threshold: 0.55 });
+      all.forEach(function (w) { io.observe(w); });
+    } else all.forEach(lightOnce);
+  })();
 })();
