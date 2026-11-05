@@ -447,7 +447,9 @@
     "kt.adr.t": "Address", "kt.adr": "Astana, 4 Shamshi Kaldayakov St.", "kt.hrs.t": "Hours", "kt.hrs": "Mon-Sat 09:00-20:00, Sunday closed", "kt.geo.t": "Coverage", "kt.geo": "Astana; other cities - online",
     "foot.tag": "Turnkey apartment flipping in Astana: selection, renovation, furnishing, sale.",
     "foot.copy": "Saule Isatayeva, Gorodskoy Romans real estate agency",
-    "sticky.call": "Call", "sticky.aria": "Quick contact", "close.aria": "Close"
+    "sticky.call": "Call", "sticky.aria": "Quick contact", "close.aria": "Close",
+    "cy.t1": "Purchase", "cy.p1": "You come: the deal in your name", "cy.t2": "Renovation and furniture", "cy.p2": "1-2&nbsp;months, no site visits needed", "cy.t3": "Sale", "cy.p3": "You come: the deal and your profit",
+    "km.street": "Shamshi Kaldayakov St.", "km.house": "Romance City office, building 4", "km.aria": "Diagram: office at 4 Shamshi Kaldayakov St."
   };
   var RU = I18N.ru;
   var iEls = [].slice.call(doc.querySelectorAll("[data-i]"));
@@ -516,6 +518,16 @@
     rv.forEach(function (el) { io.observe(el); });
     setTimeout(function () { rv.forEach(function (el) { if (!el.classList.contains("in") && el.getBoundingClientRect().top < W.innerHeight) reveal(el); }); }, 1500);
   } else { rv.forEach(function (el) { el.classList.add("in"); }); }
+
+  /* ---------- Линейные модели: прочерчиваются один раз, когда половина модели в кадре ---------- */
+  var mdls = [].slice.call(doc.querySelectorAll(".mdl"));
+  if ("IntersectionObserver" in W && !REDUCED) {
+    var ioM = new IntersectionObserver(function (es) {
+      es.forEach(function (x) { if (x.intersectionRatio < 0.45 && !(x.isIntersecting && x.boundingClientRect.height > W.innerHeight * 0.6)) return; x.target.classList.add("draw"); ioM.unobserve(x.target); });
+    }, { threshold: [0.45, 0.6] });
+    mdls.forEach(function (el) { ioM.observe(el); });
+    setTimeout(function () { mdls.forEach(function (el) { var r = el.getBoundingClientRect(); if (!el.classList.contains("draw") && r.top < W.innerHeight * 0.9 && r.bottom > 0) el.classList.add("draw"); }); }, 1800);
+  } else { mdls.forEach(function (el) { el.classList.add("draw"); }); }
 
   /* ---------- Форма -> WhatsApp ---------- */
   var form = doc.getElementById("form"), thanks = doc.getElementById("thanks"), ferr = doc.getElementById("ferr");

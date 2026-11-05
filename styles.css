@@ -531,10 +531,10 @@ html[lang="kk"] .hero-cta .btn{min-width:0}
 .hx2.on .rl{transform:none}
 .hx2.on .hx-h1 .l1 .rl{transition-delay:.1s}
 .hx2.on .hx-h1 .l2 .rl{transition-delay:.22s}
-.hx-lead,.hx-cta,.hx2 .iglink,.hx2.on .hx-lead{opacity:1;transform:none;transition-delay:.4s}
+.hx-lead,.hx-cta,.hx2 .iglink{opacity:0;transform:translateY(16px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.hx2.on .hx-lead{opacity:1;transform:none;transition-delay:.4s}
 .hx2.on .hx-cta{opacity:1;transform:none;transition-delay:.52s}
 .hx2.on .iglink{opacity:1;transform:none;transition-delay:.64s}
-.hx2.on 
 @media (max-height:760px) and (min-width:761px){
   .hx-h1{font-size:clamp(34px,min(3.6vw,6.8svh),52px)}
   .hx-lead{font-size:15px;margin-top:14px}
@@ -574,7 +574,8 @@ html[lang="kk"] .hero-cta .btn{min-width:0}
   .hx-cta .btn{height:50px}
 }
 @media (prefers-reduced-motion:reduce){
-  .rl,.hx-lead,.hx-cta,.hx2 .iglink,  .rl,.hx-lead,.hx-cta,.hx2 .iglink,.hx2-cap{transform:none!important;opacity:1!important}
+  .rl,.hx-lead,.hx-cta,.hx2 .iglink,.hx2-cap,.hx2-mull,.hx2-sash,.hx2::before,.hx2-view::before,.hx2-view::after,.hx2-room b,.hx2-strip{transition:none!important;animation:none!important}
+  .rl,.hx-lead,.hx-cta,.hx2 .iglink,.hx2-cap{transform:none!important;opacity:1!important}
     .hx2-sl{transform:rotateY(-100deg)!important}
   .hx2-sr{transform:rotateY(100deg)!important}
   .hx2::before,.hx2-view::before,.hx2-view::after{opacity:1}
@@ -584,3 +585,97 @@ html[lang="kk"] .hero-cta .btn{min-width:0}
 .hx2-room b{white-space:nowrap}
 @media (max-width:760px){html[lang="kk"] .hx-h1{font-size:clamp(24px,6.9vw,31px);line-height:1.1}html[lang="kk"] .hx-lead{font-size:15px}}
 @media (max-width:760px) and (max-height:700px){html[lang="kk"] .hx-h1{font-size:clamp(22px,6.3vw,27px)}html[lang="kk"] .hx2-win{height:clamp(170px,28svh,210px)}}
+
+/* ---------- линейные модели (05.11.2026): тонкая линия в тоне рам окон, прочерчиваются один раз при появлении ---------- */
+.mdl{display:block;color:var(--wine)}
+.mdl svg{display:block;width:100%;height:auto;overflow:visible}
+.mdl .d{fill:none;stroke:var(--wine);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.mdl .a{stroke:var(--deep)}
+.mdl .f{fill:var(--paper2)} .mdl .fb{fill:var(--paper)} .mdl .fs{fill:var(--sky)}
+.js .mdl .d{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.1s var(--ease) calc(var(--i,0)*.14s + var(--d0,0s))}
+.js .mdl.draw .d{stroke-dashoffset:0}
+.js .mdl .f,.js .mdl .fb,.js .mdl .fs{opacity:0;transition:opacity .8s var(--ease) calc(.9s + var(--d0,0s))}
+.js .mdl.draw .f,.js .mdl.draw .fb,.js .mdl.draw .fs{opacity:1}
+/* шаги: модель над номером, линия проходит через номера */
+.mdl-s{width:112px;height:90px}
+.mdl-s svg{height:100%}
+.steps .n{margin-top:0}
+.steps::before{top:132px}
+.steps li:nth-child(2) .mdl-s{--d0:.15s} .steps li:nth-child(3) .mdl-s{--d0:.3s} .steps li:nth-child(4) .mdl-s{--d0:.45s} .steps li:nth-child(5) .mdl-s{--d0:.6s}
+/* шкала цикла: вы приходите два раза - на покупку и на продажу */
+.cycle{margin:48px auto 0;max-width:1000px}
+.cycle-track{position:relative;height:44px;margin:0 20px}
+.cycle-line{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--wine);transform-origin:0 50%}
+.cycle-tick{position:absolute;left:var(--x);top:calc(50% - 6px);width:1px;height:12px;background:var(--wine);opacity:.6}
+.cycle-m{position:absolute;left:var(--x);top:50%;width:40px;height:44px;transform:translate(-50%,-50%);background:var(--paper2);padding:4px 6px}
+.cycle-m svg{height:100%}
+.js .cycle-line{transform:scaleX(0);transition:transform 1.4s var(--ease)}
+.js .cycle-tick{opacity:0;transition:opacity .5s var(--ease) .9s}
+.js .cycle-m{opacity:0;transition:opacity .6s var(--ease)}
+.js .cycle-track.draw .cycle-line{transform:none}
+.js .cycle-track.draw .cycle-tick{opacity:.6}
+.js .cycle-track.draw .cycle-m{opacity:1}
+.js .cycle-track.draw .cycle-m:nth-of-type(1){transition-delay:.1s}
+.js .cycle-track.draw .cycle-m:nth-of-type(2){transition-delay:.7s}
+.js .cycle-track.draw .cycle-m:nth-of-type(3){transition-delay:1.3s}
+.cycle-labs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:10px}
+.cl{display:grid;gap:3px}
+.cl b{font:500 17px/1.3 var(--fd);color:var(--deep)}
+.cl span{font-size:13.5px;line-height:1.45;color:var(--mute)}
+.cl:nth-child(2){text-align:center} .cl:nth-child(3){text-align:right}
+/* безопасность: силуэт фасада квартала за фактами, окна в нём горят */
+.sec-bez{padding-bottom:180px}
+.sec-bez .wrap{position:relative;z-index:1}
+.bez-wall{position:absolute;left:0;right:0;bottom:0;height:160px;z-index:0;opacity:.55;pointer-events:none}
+.bez-wall{overflow:hidden}
+.bez-wall svg{height:100%;width:100%;overflow:hidden}
+.bez-wall .d{stroke:var(--deep);stroke-width:1.25}
+.bez-wall .f{fill:#F5EFE6}
+.bez-wall .d{transition-duration:1.8s}
+/* факты: модель в правой половине карточки */
+.fact{padding-right:150px}
+.mdl-f{position:absolute;right:22px;top:50%;width:110px;height:88px;transform:translateY(-50%)}
+.mdl-f svg{height:100%}
+.facts .fact:nth-child(2) .mdl-f{--d0:.15s} .facts .fact:nth-child(3) .mdl-f{--d0:.3s} .facts .fact:nth-child(4) .mdl-f{--d0:.45s}
+/* для кого: модель под заголовком группы */
+.who-h{display:grid;gap:14px;justify-items:start}
+.mdl-w{width:96px;height:72px}
+.mdl-w svg{height:100%}
+/* контакты: схема офиса, без чужих карт */
+.kmap{position:relative;margin-top:28px;max-width:420px;aspect-ratio:400/150}
+.kmap svg{position:absolute;inset:0;height:100%}
+.km-l{position:absolute;font:500 12.5px/1.3 var(--ft);color:var(--deep)}
+.km-street{left:50%;top:86.7%;transform:translate(-50%,-50%);background:var(--sky2);padding:0 10px;white-space:nowrap}
+.km-house{left:65%;top:8%;max-width:34%}
+.js .km-l{opacity:0;transition:opacity .7s var(--ease) 1s}
+.js .kmap.draw .km-l{opacity:1}
+@media (max-width:900px){
+  .mdl-s{width:44px;height:36px;margin:0}
+  .mdl-s .d{stroke-width:2.6}
+  .steps li{grid-template-columns:56px 44px minmax(0,1fr);gap:12px}
+  .steps .n{order:1} .steps .mdl-s{order:2} .steps .st{order:3}
+  .steps::before{top:0}
+  .cycle{margin-top:32px}
+  .cycle-track{margin:0 14px}
+  .cycle-labs{gap:10px;margin-top:8px}
+  .cl b{font-size:15px} .cl span{font-size:12px}
+  .fact{padding-right:22px}
+  .mdl-f{position:static;transform:none;width:54px;height:43px;margin:0 0 10px}
+  .mdl-f .d{stroke-width:2.2}
+  .who-h{grid-template-columns:minmax(0,1fr) 64px;align-items:center;gap:12px}
+  .mdl-w{width:64px;height:48px}
+  .mdl-w .d{stroke-width:2}
+  .sec-bez{padding-bottom:120px}
+  .bez-wall{height:100px}
+  .bez-wall .d{stroke-width:2}
+}
+@media (max-width:760px){
+  .kmap{max-width:none;margin-top:24px}
+  .km-l{font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .js .mdl .d,.js .mdl .f,.js .mdl .fb,.js .mdl .fs,.js .cycle-line,.js .cycle-tick,.js .cycle-m,.js .km-l{transition:none!important;stroke-dashoffset:0;opacity:1;transform:none}
+  .js .cycle-tick{opacity:.6}
+  .js .cycle-m{transform:translate(-50%,-50%)}
+}
+@media (prefers-reduced-motion:reduce){.hx2-mull{opacity:0!important}}
