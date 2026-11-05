@@ -114,7 +114,7 @@ body.menu-open{overflow:hidden}
 }
 /* кнопка WhatsApp в шапке - только там, где ряд влезает с реальным шрифтом логотипа (замер 05.11.2026: логотип 148px) */
 @media (min-width:1200px) and (max-width:1519px){.btn-hdr{display:none}}
-@media (min-width:1520px){.hdr-in{max-width:1480px}}
+@media (min-width:1520px){.hdr-in{max-width:1480px}.logo{margin-left:60px}} /* логотип по левому краю текста героя (замечание владельца 05.11.2026) */
 @media (max-width:760px){
   :root{--hdr:64px;--gut:16px}
   .logo{font-size:21px}
