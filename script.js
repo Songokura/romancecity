@@ -1,17 +1,27 @@
-/* Romance City. Ванильный JS: плиты, герой «окно загорается, камера входит в дом», окна от прокрутки, меню, якоря, язык, лента, видео, форма в WhatsApp. */
+/* Romance City. Герой «пустая -> обставленная» (наклонный разрез), до/после в ремонте, движение по прокрутке (GSAP + ScrollTrigger, Lenis на десктопе), меню, якоря, язык, лента, видео, форма в WhatsApp. */
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement, W = window;
   root.classList.add("js");
   var ASSET_V = ((doc.currentScript && doc.currentScript.src.match(/[?&]v=([^&]+)/)) || [])[1] || "";
   var REDUCED = W.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var FINE = W.matchMedia("(hover:hover) and (pointer:fine)").matches;
   var clamp = function (v, a, b) { return Math.max(a === undefined ? 0 : a, Math.min(b === undefined ? 1 : b, v)); };
-  var easeOut = function (x) { return 1 - Math.pow(1 - x, 3); };
-  var smooth = function (x) { x = clamp(x); return x * x * (3 - 2 * x); };
   var LANG = "ru";
   var MOBILE = W.matchMedia("(max-width:760px)").matches;
-  var TOUCH = W.matchMedia("(pointer:coarse)").matches;
-  var VW = W.innerWidth, VH = W.innerHeight;
+  var VW = W.innerWidth;
+  var G = W.gsap, ST = W.ScrollTrigger;
+  var MOTION = !REDUCED && !!G && !!ST;
+  if (MOTION) G.registerPlugin(ST);
+
+  /* ---------- Плавная прокрутка: Lenis только для мыши ---------- */
+  var lenis = null;
+  if (MOTION && FINE && W.Lenis) {
+    lenis = new W.Lenis({ lerp: 0.1, smoothWheel: true });
+    lenis.on("scroll", ST.update);
+    G.ticker.add(function (t) { lenis.raf(t * 1000); });
+    G.ticker.lagSmoothing(0);
+  }
 
   /* ---------- WhatsApp: один номер, текст по ключу кнопки и языку ---------- */
   var PHONE = "77472227664";
@@ -75,36 +85,34 @@
     doc.body.classList.toggle("menu-open", open);
     behind.forEach(function (el) { if (el) { if (open) el.setAttribute("inert", ""); else el.removeAttribute("inert"); } });
     burger.setAttribute("aria-expanded", open ? "true" : "false");
+    if (lenis) { if (open) lenis.stop(); else lenis.start(); }
     if (open) {
       menu.hidden = false;
-      requestAnimationFrame(function () { menu.classList.add("open"); });
-      setTimeout(function () { var first = menu.querySelector("a"); if (first) first.focus({ preventScroll: true }); }, 60);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { menu.classList.add("open"); }); });
+      setTimeout(function () { var first = menu.querySelector("a"); if (first) first.focus({ preventScroll: true }); }, 80);
     } else {
       menu.classList.remove("open");
-      setTimeout(function () { if (!doc.body.classList.contains("menu-open")) menu.hidden = true; }, 460);
+      setTimeout(function () { if (!doc.body.classList.contains("menu-open")) menu.hidden = true; }, 470);
       if (returnFocus) burger.focus({ preventScroll: true });
     }
   }
   if (burger) burger.addEventListener("click", function () { var o = doc.body.classList.contains("menu-open"); setMenu(!o, o); });
   doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && doc.body.classList.contains("menu-open")) setMenu(false, true); });
 
-  /* ---------- Якоря ---------- */
-  var HDR = function () { return parseFloat(getComputedStyle(root).getPropertyValue("--hdr")) || 72; };
-  function flowPlate(pw) {
-    var plate = pw.firstElementChild;
-    return !plate || getComputedStyle(plate).position !== "sticky";
-  }
+  /* ---------- Якоря: секция - от своего верха (шапка лежит на её верхнем отступе), блок внутри - под шапкой ---------- */
+  var HDR = function () { return parseFloat(getComputedStyle(root).getPropertyValue("--hdrH")) || 84; };
   function targetTop(el) {
     var r = el.getBoundingClientRect().top + W.pageYOffset;
-    if (el.classList.contains("pw")) return el.classList.contains("pw-hero") ? 0 : (flowPlate(el) ? r - HDR() : r);
-    if (el.classList.contains("sec")) return r - HDR();
-    return r - HDR() - 14;
+    if (el.id === "top") return 0;
+    if (el.classList.contains("sec")) return r;
+    return r - HDR() - 16;
   }
   function goTo(id, instant) {
     var el = doc.getElementById(id);
     if (!el) return false;
     var y = Math.max(0, targetTop(el));
-    if (instant || REDUCED) { root.style.scrollBehavior = "auto"; W.scrollTo(0, y); root.style.scrollBehavior = ""; }
+    if (lenis) { lenis.scrollTo(y, instant ? { immediate: true, force: true } : { duration: 1.2, force: true, easing: function (t) { return 1 - Math.pow(1 - t, 4); } }); return true; }
+    if (instant || REDUCED) W.scrollTo(0, y);
     else W.scrollTo({ top: y, behavior: "smooth" });
     return true;
   }
@@ -112,221 +120,53 @@
     var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
     if (!a) return;
     var id = a.getAttribute("href").slice(1);
-    if (!id) return;
-    if (!doc.getElementById(id)) return;
+    if (!id || !doc.getElementById(id)) return;
     e.preventDefault();
+    var wasOpen = doc.body.classList.contains("menu-open");
     setMenu(false, false);
     setTimeout(function () {
       goTo(id, false);
       try { history.pushState(null, "", "#" + id); } catch (err) {}
-    }, doc.body.classList.contains("menu-open") ? 120 : 0);
+    }, wasOpen ? 140 : 0);
   });
 
-  /* ---------- Герой: дом в сумерках, одно окно горит. По прокрутке камера входит в окно (--o 0..1) ---------- */
-  var hero = doc.querySelector(".hero"), facade = doc.getElementById("facade"), herobig = doc.getElementById("herobig");
-  var heroTxt = doc.querySelector(".hero-txt");
-  /* горящее окно на кадре фасада: доли ширины и высоты кадра (десктопный кадр и мобильный кроп) */
-  var WIN_D = { l: 0.832, t: 0.536, r: 0.864, b: 0.589 }, WIN_M = { l: 0.6975, t: 0.3657, r: 0.755, b: 0.4629 };
-  var IW = 1500, IH = 2000; /* кадр гостиной */
-  var herobg = doc.getElementById("herobg");
-  function measureHero() {
-    if (!hero || !facade || !herobg) return;
-    var pw = hero.clientWidth, ph = hero.clientHeight;
-    var hr = hero.getBoundingClientRect(), br = herobg.getBoundingClientRect();
-    var bw = br.width, bh = br.height;
-    if (!pw || !ph || !bw || !bh) return;
-    var mob = (facade.currentSrc || "").indexOf("-m.") > -1;
-    var WIN = mob ? WIN_M : WIN_D;
-    var nw = facade.naturalWidth || (mob ? 800 : 1280), nh = facade.naturalHeight || (mob ? 1400 : 2276);
-    var pos = getComputedStyle(facade).objectPosition.split(" ");
-    var px = parseFloat(pos[0]) / 100, py = parseFloat(pos[1] || "50%") / 100;
-    if (isNaN(px)) px = 0.5; if (isNaN(py)) py = 0.5;
-    var sc = Math.max(bw / nw, bh / nh), dw = nw * sc, dh = nh * sc;
-    var ox = (bw - dw) * px, oy = (bh - dh) * py;
-    /* окно в координатах ленты фасада (для подсветки) и в координатах героя (для кадра гостиной) */
-    var gl = ox + WIN.l * dw, gt = oy + WIN.t * dh, ww = (WIN.r - WIN.l) * dw, wh = (WIN.b - WIN.t) * dh;
-    var wl = gl + (br.left - hr.left), wt = gt + (br.top - hr.top);
-    var cx = wl + ww / 2, cy = wt + wh / 2;
-    var ss = Math.max(ww / IW, wh / IH), sf = Math.max(pw / IW, ph / IH);
-    var st = hero.style;
-    st.setProperty("--gl", gl.toFixed(1) + "px"); st.setProperty("--gt", gt.toFixed(1) + "px");
-    st.setProperty("--wl", wl.toFixed(1) + "px"); st.setProperty("--wt", wt.toFixed(1) + "px");
-    st.setProperty("--wr", (pw - wl - ww).toFixed(1) + "px"); st.setProperty("--wb", (ph - wt - wh).toFixed(1) + "px");
-    st.setProperty("--ww", ww.toFixed(1) + "px"); st.setProperty("--wh", wh.toFixed(1) + "px");
-    st.setProperty("--wx", ((gl + ww / 2) / bw * 100).toFixed(2) + "%"); st.setProperty("--wy", ((gt + wh / 2) / bh * 100).toFixed(2) + "%");
-    st.setProperty("--k", (ss / sf).toFixed(5));
-    st.setProperty("--iw", (IW * sf).toFixed(1) + "px"); st.setProperty("--ih", (IH * sf).toFixed(1) + "px");
-    st.setProperty("--dx", (cx - pw / 2).toFixed(1) + "px"); st.setProperty("--dy", (cy - ph / 2).toFixed(1) + "px");
-  }
-  if (facade) { if (facade.complete) measureHero(); else facade.addEventListener("load", measureHero); }
-
-  /* ---------- Окна: загораются от прокрутки. В sticky-плитах - по --enter плиты (0.55), остальные - по видимости (50%);
-     гаснут, только когда окно целиком ушло из экрана, - так эффект повторяется при возврате, но не мигает у границы ---------- */
-  var allWins = [].slice.call(doc.querySelectorAll(".win"));
-  function setLit(w, on) { if (w._lit === on) return; w._lit = on; w.classList.toggle("lit", on); }
-  function inStickyPlate(w) { var pw = w.closest(".pw"); return !!pw && !flowPlate(pw); }
-  if (REDUCED || !("IntersectionObserver" in W)) allWins.forEach(function (w) { setLit(w, true); });
-  else {
-    var ioWin = new IntersectionObserver(function (es) {
-      es.forEach(function (x) {
-        if (inStickyPlate(x.target)) return;
-        if (x.intersectionRatio >= 0.5) setLit(x.target, true);
-        else if (!x.isIntersecting) setLit(x.target, false);
-      });
-    }, { threshold: [0, 0.5] });
-    allWins.forEach(function (w) { ioWin.observe(w); });
-  }
-
-  /* ---------- Плиты ---------- */
-  var pws = [].slice.call(doc.querySelectorAll(".pw"));
-  var sticky = doc.getElementById("sticky"), kont = doc.getElementById("kontakty");
-  var hdr = doc.getElementById("hdr");
-  var INTRO_SKIP = location.hash.length > 1 || W.pageYOffset > 80 || REDUCED;
+  /* ---------- Шапка, липкая панель ---------- */
+  var sticky = doc.getElementById("sticky"), kont = doc.getElementById("kontakty"), hdr = doc.getElementById("hdr");
   var ticking = false;
-  var st = pws.map(function () { return { out: {} }; });
-  function put(el, s, k, v) { if (s.out[k] !== v) { s.out[k] = v; el.style.setProperty(k, v); } }
-  function update() {
+  function onScrollUi() {
     ticking = false;
-    var H = VH;
-    var pageY = W.pageYOffset;
-    var kontTop = kont ? kont.getBoundingClientRect().top : null;
-    var rects = [], nxtTops = [], i;
-    for (i = 0; i < pws.length; i++) {
-      rects.push(pws[i].getBoundingClientRect());
-      var nx = pws[i].nextElementSibling;
-      nxtTops.push(nx ? nx.getBoundingClientRect().top : null);
-    }
-    for (i = 0; i < pws.length; i++) {
-      var pw = pws[i], r = rects[i], s = st[i];
-      /* плита далеко от экрана: считаем один раз на сторону (ниже/выше), чтобы прыжок по якорю не оставил её в старом состоянии */
-      var near = r.bottom > -H * 0.5 && r.top < H * 1.5;
-      var side = near ? 0 : (r.top > 0 ? 1 : -1);
-      if (!near && s.side === side) continue;
-      s.side = side;
-      var flow = flowPlate(pw);
-      var enter = clamp(1 - r.top / H);
-      var stay = r.height > H ? clamp(-r.top / (r.height - H)) : 0;
-      var exit = (nxtTops[i] !== null && !flow) ? clamp(1 - nxtTops[i] / H) : 0;
-      var isHero = pw.classList.contains("pw-hero");
-      put(pw, s, "--enter", enter.toFixed(4));
-      put(pw, s, "--exit", exit.toFixed(4));
-      var plate = pw.firstElementChild;
-      if (isHero && plate) {
-        var o = flow ? 0 : smooth((stay - 0.04) / 0.96);
-        put(plate, s, "--o", o.toFixed(4));
-        var flown = o > 0.45;
-        if (s.flown !== flown) { s.flown = flown; plate.classList.toggle("flown", flown); }
-      }
-      if (plate) plate.classList.toggle("gone", exit >= 1 && !flow);
-      if (!s.txts) { s.txts = pw.querySelectorAll(".txt"); s.wins = pw.querySelectorAll(".win"); }
-      if (!isHero) {
-        var on = flow ? enter > 0.22 : enter > 0.6;
-        if (s.on !== on) { s.on = on; for (var t = 0; t < s.txts.length; t++) s.txts[t].classList.toggle("on", on); }
-        /* окно плиты: загорается на 0.55 въезда, гаснет, когда плита снова целиком под экраном */
-        if (!flow && !REDUCED) {
-          var lit = enter >= 0.55 ? true : (enter <= 0.02 ? false : null);
-          if (lit !== null) for (var k = 0; k < s.wins.length; k++) setLit(s.wins[k], lit);
-          /* фоновая сцена плиты прочерчивается вместе с загоранием окна, один раз */
-          if (lit === true && !s.drew) { s.drew = true; [].forEach.call(pw.querySelectorAll(".plate-bg"), function (b) { b.classList.add("draw"); }); }
-        }
-      }
-    }
+    var y = W.pageYOffset, H = W.innerHeight;
     if (sticky) {
-      var show = pageY > H * 0.55;
-      if (kontTop !== null && kontTop < H * 0.5) show = false;
+      var show = y > H * 0.55;
+      if (kont && kont.getBoundingClientRect().top < H * 0.5) show = false;
       sticky.classList.toggle("show", show);
     }
-    if (hdr) hdr.classList.toggle("scrolled", pageY > 12);
+    if (hdr) hdr.classList.toggle("scrolled", y > 12);
   }
-  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
-  W.addEventListener("scroll", onScroll, { passive: true });
-  W.addEventListener("resize", function () {
-    /* на телефоне смена только высоты - это адресная строка: раскладку не пересчитываем */
-    if (W.innerWidth !== VW) {
-      VW = W.innerWidth; VH = W.innerHeight; MOBILE = W.matchMedia("(max-width:760px)").matches;
-      fitAll(); measureHero(); lentaState();
-    } else if (!TOUCH) { VH = W.innerHeight; measureHero(); }
-    onScroll();
-  });
+  W.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(onScrollUi); } }, { passive: true });
 
-  /* интро: текст поднимается, затем окно на фасаде загорается и в нём видна гостиная. Пропускается при хэше или прокрутке */
-  function runIntro() {
-    if (!hero) return;
-    if (INTRO_SKIP) { hero.classList.add("lit"); if (heroTxt) heroTxt.classList.add("on"); return; }
-    setTimeout(function () { if (heroTxt) heroTxt.classList.add("on"); }, 150);
-    setTimeout(function () { hero.classList.add("lit"); }, 1050);
+  /* ---------- Заголовок героя: строк не больше нужного, длинное слово не вылезает (шаг 5%) ---------- */
+  var h1m = doc.querySelector(".h1-main");
+  function fitH1() {
+    if (!h1m) return;
+    h1m.style.fontSize = "";
+    var size = parseFloat(getComputedStyle(h1m).fontSize), n = 0;
+    var maxLines = MOBILE ? 5 : (W.innerWidth <= 1100 ? 3 : (LANG === "kk" ? 3 : 2));
+    function bad() {
+      var lh = parseFloat(getComputedStyle(h1m).lineHeight) || size;
+      return h1m.scrollWidth > h1m.clientWidth + 1 || h1m.offsetHeight > lh * maxLines + 4;
+    }
+    while (bad() && n < 16) { size *= 0.95; h1m.style.fontSize = size.toFixed(1) + "px"; n++; }
   }
-
-  /* ---------- fitText: обе строки заголовка героя одним кеглем ---------- */
-  var fits = [].slice.call(doc.querySelectorAll(".fit"));
-  function fitOne(el) {
-    var box = el.parentElement, max = box.clientWidth;
-    if (!max) return;
-    el.style.fontSize = ""; el.style.whiteSpace = "nowrap";
-    var size = parseFloat(getComputedStyle(el).fontSize), n = 0;
-    while (el.scrollWidth > max && n < 14) { size *= 0.95; el.style.fontSize = size.toFixed(1) + "px"; n++; }
-  }
-  function fitAll() {
-    if (!fits.length) return;
-    if (MOBILE) { fits.forEach(function (el) { el.style.fontSize = ""; el.style.whiteSpace = ""; }); return; }
-    var min = Infinity;
-    fits.forEach(function (el) { fitOne(el); var s = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize); if (s < min) min = s; });
-    fits.forEach(function (el) { el.style.fontSize = min.toFixed(1) + "px"; });
-  }
-
-  /* ---------- Лента объектов: шаг - одна карточка, стрелки гаснут на краях ---------- */
-  var lenta = doc.getElementById("lenta");
-  var larrs = [].slice.call(doc.querySelectorAll(".larr"));
-  function lentaStep() {
-    var card = lenta ? lenta.querySelector(".obj") : null;
-    if (!card) return 300;
-    var gap = parseFloat(getComputedStyle(lenta).columnGap || getComputedStyle(lenta).gap) || 0;
-    return card.getBoundingClientRect().width + gap;
-  }
-  function lentaState() {
-    if (!lenta) return;
-    var max = lenta.scrollWidth - lenta.clientWidth, x = lenta.scrollLeft;
-    var none = max <= 1;
-    larrs.forEach(function (b) {
-      b.hidden = none;
-      b.disabled = b.classList.contains("larr-prev") ? x <= 1 : x >= max - 1;
-    });
-  }
-  if (lenta) {
-    larrs.forEach(function (b) {
-      b.addEventListener("click", function () {
-        lenta.scrollBy({ left: (b.classList.contains("larr-prev") ? -1 : 1) * lentaStep(), behavior: REDUCED ? "auto" : "smooth" });
-      });
-    });
-    lenta.addEventListener("scroll", function () { if (!lenta._t) lenta._t = setTimeout(function () { lenta._t = 0; lentaState(); }, 80); }, { passive: true });
-  }
-
-  /* ---------- Видео: немая петля по видимости, полный ролик по клику в модалке ---------- */
-  var vbox = doc.getElementById("vbox"), vloop = doc.getElementById("vloop");
-  if (vbox && vloop && "IntersectionObserver" in W) {
-    vloop.addEventListener("playing", function () { vbox.classList.add("is-live"); });
-    new IntersectionObserver(function (es) {
-      es.forEach(function (x) {
-        if (x.isIntersecting) { var p = vloop.play(); if (p && p.catch) p.catch(function () {}); }
-        else vloop.pause();
-      });
-    }, { threshold: 0.25 }).observe(vbox);
-  }
-  var vplay = doc.getElementById("vplay"), vmodal = doc.getElementById("vmodal"), vfull = doc.getElementById("vfull");
-  function vClose() {
-    if (!vmodal || vmodal.hidden) return;
-    vmodal.hidden = true; doc.body.classList.remove("modal-open");
-    if (vfull) vfull.pause();
-    if (vplay) vplay.focus({ preventScroll: true });
-  }
-  if (vplay && vmodal && vfull) {
-    vplay.addEventListener("click", function () {
-      vmodal.hidden = false; doc.body.classList.add("modal-open");
-      var p = vfull.play(); if (p && p.catch) p.catch(function () {});
-      setTimeout(function () { try { vfull.focus({ preventScroll: true }); } catch (e) {} }, 50);
-    });
-    vmodal.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) vClose(); });
-    doc.addEventListener("keydown", function (e) { if (e.key === "Escape") vClose(); });
+  /* телефон: лента комнат забирает всё место над кнопками героя, кнопки остаются в первом экране */
+  function sizeBand() {
+    var bandEl = doc.getElementById("band"), cta = doc.querySelector(".hero-cta");
+    if (!bandEl || !cta) return;
+    bandEl.style.minHeight = "";
+    if (!MOBILE) return;
+    var below = cta.getBoundingClientRect().bottom - bandEl.getBoundingClientRect().bottom;
+    var free = W.innerHeight - below - 18;
+    bandEl.style.minHeight = Math.round(Math.max(150, Math.min(free, W.innerHeight * 0.48))) + "px";
   }
 
   /* ---------- Язык: RU в разметке, EN здесь, KZ подгружается отдельным файлом ---------- */
@@ -345,7 +185,7 @@
     "tel.aria": "Call +7 747 222 76 64", "ig.aria": "Saule Isatayeva on Instagram", "hdr.wa": "Message on WhatsApp", "menu.aria": "Menu",
     "menu.note": "Astana, 4 Shamshi Kaldayakov St. Mon-Sat 09:00-20:00. Investors from other cities are handled online.", "menu.call": "Call",
     "hero.kicker": "ASTANA · TURNKEY FLIPPING · SINCE 2011",
-    "hero.t1": "Turnkey apartment flipping in Astana",
+    "hero.t1": "<span class=\"w\">Turnkey</span> apartment flipping in&nbsp;Astana",
     "hero.t2": "from bare walls to a profitable sale",
     "hero.lead": "You buy an apartment in your own name in a new building in Astana. My team and I renovate it in <span class=\"nw\">1-2&nbsp;months</span>, furnish it and sell it. <span class=\"m-less\">The full cycle takes from 3&nbsp;months, and you come only twice: to buy and to sell.</span>",
     "hero.cta1": "Get an estimate on WhatsApp", "hero.cta2": "How it works", "hero.ig": "My apartments on Instagram →", "hero.hint": "Scroll: step inside the apartment",
@@ -367,10 +207,10 @@
     "pb.l4": "Apartments from 30&nbsp;million tenge, bare-wall finish from the developer",
     "pb.partner": "Partnership with the developer BAZIS-A: Grand Monaco apartments in bare-wall finish with documents, no commission for the client.",
     "pb.btn": "Select an apartment",
-    "pb.alt": "Saule Isatayeva in front of the Gorodskoy Romans residential quarter in Astana",
-    "pb.cap": "Gorodskoy Romans, Astana: I live in this quarter and do renovations here",
-    "re.alt": "Saule Isatayeva and a craftsman checking furniture drawings in an apartment under renovation",
-    "re.cap": "On site: checking the furniture against the project",
+    "pb.alt": "Saule Isatayeva at a table with a brochure and an apartment plan",
+    "pb.cap": "At the meeting: the layout and the complex brochure before purchase",
+    "re.alt": "A craftsman assembling made-to-order furniture in an apartment under renovation",
+    "re.cap": "Assembling made-to-order furniture on site",
     "re.k": "--- RENOVATION AND FURNITURE", "re.h": "Renovation and furnishing in <span class=\"nw\">1-2&nbsp;months</span>",
     "re.lead": "My team and I run the renovation. Furniture is made to order for the apartment's design, followed by textiles, decor and cleaning - the apartment is ready for viewings.",
     "re.l1": "Full range of renovation work: electrics, plumbing, tiling, painting",
@@ -423,7 +263,7 @@
     "dk.a3": "Book a consultation →",
     "dk.t4": "From other cities", "dk.p4": "You do not live in Astana. I consult online and select an apartment for your budget; you fly in for the purchase and for the sale closing.",
     "dk.a4": "How it works →",
-    "me.alt": "Saule Isatayeva: studio portrait, black jacket and burgundy scarf",
+    "me.alt": "Saule Isatayeva, portrait in an armchair by the window",
     "me.cap": "Saule Isatayeva, founder of the Gorodskoy Romans agency",
     "me.k": "--- ABOUT ME", "me.h": "Saule Isatayeva, founder of the Gorodskoy Romans real estate agency",
     "me.lead": "In flipping since 2011; about 50&nbsp;apartments a year pass through my team and me. I live in the Gorodskoy Romans quarter myself and do renovations here.",
@@ -451,7 +291,16 @@
     "foot.copy": "Saule Isatayeva, Gorodskoy Romans real estate agency",
     "sticky.call": "Call", "sticky.aria": "Quick contact", "close.aria": "Close",
     "cy.t1": "Purchase", "cy.p1": "You come: the deal in your name", "cy.t2": "Renovation and furniture", "cy.p2": "1-2&nbsp;months, no site visits needed", "cy.t3": "Sale", "cy.p3": "You come: the deal and your profit",
-    "km.street": "Shamshi Kaldayakov St.", "km.house": "Romance City office, building 4", "km.aria": "Diagram: office at 4 Shamshi Kaldayakov St."
+    "km.street": "Shamshi Kaldayakov St.", "km.house": "Romance City office, building 4", "km.aria": "Diagram: office at 4 Shamshi Kaldayakov St.",
+    "hero.tag0": "Empty apartment",
+    "hero.tag1": "Furnished and ready for sale",
+    "hero.seal": "renovation 1-2 months · custom furniture · sale ·",
+    "mq.t": "Selection · Renovation · Furniture · Sale · Turnkey flipping ·",
+    "re.drag": "Drag the handle: before and after furnishing",
+    "re.balt": "Kitchen-living room after renovation, without furniture",
+    "re.aalt": "Kitchen-living room in Grand Monaco with furniture: sofa, made-to-order kitchen, crystal chandelier",
+    "pb.facalt": "Courtyard of a residential complex in Astana",
+    "kt.alt": "Saule Isatayeva full-length by a city-view panel"
   };
   var RU = I18N.ru;
   var iEls = [].slice.call(doc.querySelectorAll("[data-i]"));
@@ -461,17 +310,18 @@
   var metaDesc = doc.querySelector('meta[name="description"]');
   iEls.forEach(function (el) { var k = el.getAttribute("data-i"); if (RU[k] == null) RU[k] = el.innerHTML; });
   phEls.forEach(function (el) { RU[el.getAttribute("data-i-ph")] = el.getAttribute("placeholder"); });
-  ariaEls.forEach(function (el) { RU[el.getAttribute("data-i-aria")] = el.getAttribute("aria-label"); });
+  ariaEls.forEach(function (el) { var k = el.getAttribute("data-i-aria"); if (RU[k] == null) RU[k] = el.getAttribute("aria-label"); });
   altEls.forEach(function (el) { RU[el.getAttribute("data-i-alt")] = el.getAttribute("alt"); });
   RU["meta.title"] = doc.title;
   RU["meta.desc"] = metaDesc ? metaDesc.getAttribute("content") : "";
   function t(key) { var d = I18N[LANG] || RU; return d[key] != null ? d[key] : RU[key]; }
+  function strip(html) { var d = doc.createElement("div"); d.innerHTML = html; return d.textContent; }
   function applyLang(lang) {
     if (!I18N[lang]) lang = "ru";
     LANG = lang;
-    iEls.forEach(function (el) { var v = t(el.getAttribute("data-i")); if (v != null) el.innerHTML = v; });
+    iEls.forEach(function (el) { var v = t(el.getAttribute("data-i")); if (v != null) { if (el.namespaceURI === "http://www.w3.org/2000/svg") el.textContent = strip(v); else el.innerHTML = v; } });
     phEls.forEach(function (el) { var v = t(el.getAttribute("data-i-ph")); if (v != null) el.setAttribute("placeholder", v); });
-    ariaEls.forEach(function (el) { var v = t(el.getAttribute("data-i-aria")); if (v != null) el.setAttribute("aria-label", v); });
+    ariaEls.forEach(function (el) { var v = t(el.getAttribute("data-i-aria")); if (v != null) el.setAttribute("aria-label", strip(v)); });
     altEls.forEach(function (el) { var v = t(el.getAttribute("data-i-alt")); if (v != null) el.setAttribute("alt", v); });
     doc.title = t("meta.title");
     if (metaDesc) metaDesc.setAttribute("content", t("meta.desc"));
@@ -481,7 +331,9 @@
       b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", on ? "true" : "false");
     });
     try { localStorage.setItem("romancecity-lang", lang); } catch (e) {}
-    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { fitAll(); measureHero(); }); else { fitAll(); measureHero(); }
+    splitQuote();
+    var after = function () { fitH1(); sizeBand(); lentaState(); if (MOTION) ST.refresh(); };
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(after); else after();
   }
   function loadLang(lang, done) {
     if (I18N[lang] || lang !== "kk") return done();
@@ -502,34 +354,145 @@
   [].forEach.call(doc.querySelectorAll(".lang button"), function (b) {
     b.addEventListener("click", function () { setLang(b.getAttribute("data-lang")); });
   });
-  (function initLang() {
-    /* ?lang= в адресе главнее сохранённого выбора: реклама ведёт на ?lang=ru */
-    var forced = (location.search.match(/[?&]lang=(ru|kk|en)/) || [])[1];
-    var saved = null; try { saved = localStorage.getItem("romancecity-lang"); } catch (e) {}
-    var lang = forced || saved || "ru";
-    if (lang !== "ru") setLang(lang);
-  })();
 
-  /* ---------- Проявление секций; окна вне плит загораются по видимости ---------- */
-  var rv = [].slice.call(doc.querySelectorAll(".rv"));
-  function reveal(el) { el.classList.add("in"); }
-  if ("IntersectionObserver" in W && !REDUCED) {
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (x) { if (!x.isIntersecting) return; reveal(x.target); io.unobserve(x.target); });
-    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
-    rv.forEach(function (el) { io.observe(el); });
-    setTimeout(function () { rv.forEach(function (el) { if (!el.classList.contains("in") && el.getBoundingClientRect().top < W.innerHeight) reveal(el); }); }, 1500);
-  } else { rv.forEach(function (el) { el.classList.add("in"); }); }
+  /* ---------- Цитата: слова загораются по прокрутке ---------- */
+  var quote = doc.getElementById("quote"), qWords = [];
+  function splitQuote() {
+    if (!quote) return;
+    var txt = quote.textContent;
+    quote.innerHTML = txt.split(/(\s+)/).map(function (w) { return /^\s+$/.test(w) || !w ? w : '<span class="qw">' + w + "</span>"; }).join("");
+    qWords = [].slice.call(quote.querySelectorAll(".qw"));
+    if (MOTION) quote.classList.add("q-on");
+    paintQuote(quote._p || 0);
+  }
+  function paintQuote(p) {
+    if (!quote) return;
+    quote._p = p;
+    var n = Math.round(p * qWords.length);
+    for (var i = 0; i < qWords.length; i++) qWords[i].classList.toggle("on", i < n);
+  }
 
-  /* ---------- Линейные модели: прочерчиваются один раз, когда половина модели в кадре ---------- */
-  var mdls = [].slice.call(doc.querySelectorAll(".mdl"));
-  if ("IntersectionObserver" in W && !REDUCED) {
-    var ioM = new IntersectionObserver(function (es) {
-      es.forEach(function (x) { if (x.intersectionRatio < 0.45 && !(x.isIntersecting && x.boundingClientRect.height > W.innerHeight * 0.6)) return; x.target.classList.add("draw"); ioM.unobserve(x.target); });
-    }, { threshold: [0.45, 0.6] });
-    mdls.forEach(function (el) { ioM.observe(el); });
-    setTimeout(function () { mdls.forEach(function (el) { var r = el.getBoundingClientRect(); if (!el.classList.contains("draw") && r.top < W.innerHeight * 0.9 && r.bottom > 0) el.classList.add("draw"); }); }, 1800);
-  } else { mdls.forEach(function (el) { el.classList.add("draw"); }); }
+  /* ---------- Герой: наклонный разрез проходит справа налево, пустые комнаты становятся обставленными ---------- */
+  var hero = doc.getElementById("top"), band = doc.getElementById("band"), afterL = doc.getElementById("after");
+  var blade = doc.getElementById("blade"), knob = band ? band.querySelector(".knob") : null;
+  var fis = afterL ? [].slice.call(afterL.querySelectorAll(".fi")) : [];
+  var HERO_SKIP = REDUCED || location.hash.length > 1 || W.pageYOffset > 80;
+  function heroFinal() {
+    if (afterL) afterL.style.clipPath = "none";
+    if (blade) blade.style.opacity = 0;
+    if (knob) knob.style.opacity = 0;
+    fis.forEach(function (im) { im.style.transform = ""; });
+  }
+  function heroFrame(p) {
+    var Wd = band.clientWidth, H = band.clientHeight;
+    var SL = H * 0.34, bw = blade.offsetWidth || 26;
+    var c0 = Wd + SL + 40, c1 = -40;
+    var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    var c = c0 + (c1 - c0) * e;
+    afterL.style.clipPath = "polygon(" + c.toFixed(1) + "px 0," + Wd + "px 0," + Wd + "px " + H + "px," + (c - SL).toFixed(1) + "px " + H + "px)";
+    var ang = Math.atan(SL / (H + 40)) * 180 / Math.PI;
+    blade.style.transform = "translateX(" + (c - SL / 2 - bw / 2).toFixed(1) + "px) skewX(" + (-ang).toFixed(2) + "deg)";
+    knob.style.transform = "translateX(" + (c - SL / 2).toFixed(1) + "px)";
+    var kv = 1 - clamp((p - 0.9) / 0.1);
+    blade.style.opacity = kv; knob.style.opacity = kv;
+    var mid = c - SL / 2;
+    fis.forEach(function (im) {
+      var room = im.parentNode;
+      if (!room.offsetWidth) return;
+      var right = room.offsetLeft + room.offsetWidth;
+      var r = clamp((right - mid) / (room.offsetWidth * 1.15));
+      var q = 1 - Math.pow(1 - r, 3);
+      im.style.transform = "translateX(" + ((1 - q) * 90).toFixed(1) + "px) scale(" + (1.12 - 0.12 * q).toFixed(4) + ")";
+    });
+  }
+  function runHero() {
+    if (!hero) return;
+    if (HERO_SKIP || !band || !afterL || !blade || !knob) { heroFinal(); hero.classList.add("on"); return; }
+    heroFrame(0);
+    var started = false;
+    function go() {
+      if (started) return; started = true;
+      requestAnimationFrame(function () { hero.classList.add("on"); });
+      var T0 = performance.now() + 700, DUR = 3400;
+      (function f(now) {
+        var p = clamp((now - T0) / DUR);
+        heroFrame(p);
+        if (p < 1) requestAnimationFrame(f); else heroFinal();
+      })(performance.now());
+    }
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(go);
+    setTimeout(go, 900);
+  }
+
+  /* ---------- Ремонт: до/после перетаскиваемым разрезом ---------- */
+  var ba = doc.getElementById("ba"), baRange = doc.getElementById("barange");
+  function setBa(v) { if (!ba) return; ba.style.setProperty("--c", v.toFixed(2) + "%"); if (baRange && Math.round(+baRange.value) !== Math.round(v)) baRange.value = Math.round(v); }
+  if (ba && baRange) {
+    baRange.addEventListener("input", function () { if (ba._tw) { ba._tw.kill(); ba._tw = null; } setBa(+baRange.value); });
+  }
+
+  /* ---------- Лента объектов: шаг - одна карточка, стрелки гаснут на краях ---------- */
+  var lenta = doc.getElementById("lenta");
+  var larrs = [].slice.call(doc.querySelectorAll(".larr"));
+  function lentaStep() {
+    var card = lenta ? lenta.querySelector(".obj") : null;
+    if (!card) return 300;
+    var gap = parseFloat(getComputedStyle(lenta).columnGap || getComputedStyle(lenta).gap) || 0;
+    return card.getBoundingClientRect().width + gap;
+  }
+  function lentaState() {
+    if (!lenta) return;
+    var max = lenta.scrollWidth - lenta.clientWidth, x = lenta.scrollLeft;
+    var none = max <= 1;
+    larrs.forEach(function (b) {
+      b.hidden = none;
+      b.disabled = b.classList.contains("larr-prev") ? x <= 1 : x >= max - 1;
+    });
+  }
+  if (lenta) {
+    larrs.forEach(function (b) {
+      b.addEventListener("click", function () {
+        lenta.scrollBy({ left: (b.classList.contains("larr-prev") ? -1 : 1) * lentaStep(), behavior: REDUCED ? "auto" : "smooth" });
+      });
+    });
+    lenta.addEventListener("scroll", function () { if (!lenta._t) lenta._t = setTimeout(function () { lenta._t = 0; lentaState(); }, 80); }, { passive: true });
+    if (lenis) lenta.setAttribute("data-lenis-prevent-wheel", "");
+  }
+
+  /* ---------- Видео: немая петля по видимости, полный ролик по клику в модалке ---------- */
+  var vbox = doc.getElementById("vbox"), vloop = doc.getElementById("vloop");
+  if (vbox && vloop && "IntersectionObserver" in W && !REDUCED) {
+    vloop.addEventListener("playing", function () { vbox.classList.add("is-live"); });
+    new IntersectionObserver(function (es) {
+      es.forEach(function (x) {
+        if (x.isIntersecting) { var p = vloop.play(); if (p && p.catch) p.catch(function () {}); }
+        else vloop.pause();
+      });
+    }, { threshold: 0.25 }).observe(vbox);
+  }
+  var vmodal = doc.getElementById("vmodal"), vfull = doc.getElementById("vfull"), vOpener = null;
+  function vClose() {
+    if (!vmodal || vmodal.hidden) return;
+    vmodal.hidden = true; doc.body.classList.remove("modal-open");
+    if (lenis) lenis.start();
+    if (vfull) vfull.pause();
+    if (vOpener) vOpener.focus({ preventScroll: true });
+  }
+  function vOpen(btn) {
+    if (!vmodal || !vfull) return;
+    vOpener = btn;
+    vmodal.hidden = false; doc.body.classList.add("modal-open");
+    if (lenis) lenis.stop();
+    var p = vfull.play(); if (p && p.catch) p.catch(function () {});
+    setTimeout(function () { try { vfull.focus({ preventScroll: true }); } catch (e) {} }, 50);
+  }
+  [doc.getElementById("vplay")].concat([].slice.call(doc.querySelectorAll("[data-play]"))).forEach(function (b) {
+    if (b) b.addEventListener("click", function () { vOpen(b); });
+  });
+  if (vmodal) {
+    vmodal.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) vClose(); });
+    doc.addEventListener("keydown", function (e) { if (e.key === "Escape") vClose(); });
+  }
 
   /* ---------- Форма -> WhatsApp ---------- */
   var form = doc.getElementById("form"), thanks = doc.getElementById("thanks"), ferr = doc.getElementById("ferr");
@@ -560,46 +523,91 @@
 
   var year = doc.getElementById("year"); if (year) year.textContent = String(new Date().getFullYear());
 
-  /* ---------- Старт ---------- */
-  function start() {
-    fitAll(); measureHero();
-    if (location.hash.length > 1) {
-      var id = location.hash.slice(1);
-      setTimeout(function () { goTo(id, true); update(); }, 40);
+  /* ---------- Движение по прокрутке ---------- */
+  function motion() {
+    if (!MOTION) { paintQuote(1); return; }
+    var mm = G.matchMedia();
+    /* заголовки секций поднимаются из-под маски */
+    G.utils.toArray(".h2.split").forEach(function (h) {
+      G.fromTo(h, { y: 60, clipPath: "inset(0% 0% 100% 0%)" }, { y: 0, clipPath: "inset(0% 0% -20% 0%)", duration: 1.1, ease: "power4.out",
+        scrollTrigger: { trigger: h, start: "top 88%", once: true } });
+    });
+    /* остальной текст и карточки - пакетом */
+    ST.batch(".rv, .sec .lead, .kicker", { start: "top 90%", once: true,
+      onEnter: function (els) { G.fromTo(els, { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .9, ease: "power3.out", stagger: .08, overwrite: true }); } });
+    /* шаги: карточки выезжают по очереди, цифры крупнеют */
+    G.fromTo(".step", { y: 70, opacity: 0 }, { y: 0, opacity: 1, duration: .9, ease: "power3.out", stagger: .1,
+      scrollTrigger: { trigger: ".steps", start: "top 85%", once: true } });
+    G.fromTo(".step .n", { scale: .6, transformOrigin: "left bottom" }, { scale: 1, duration: 1.1, ease: "back.out(2)", stagger: .1,
+      scrollTrigger: { trigger: ".steps", start: "top 85%", once: true } });
+    /* шкала цикла заливается бордо по прокрутке */
+    G.fromTo("#cfill", { scaleX: 0 }, { scaleX: 1, ease: "none", scrollTrigger: { trigger: ".cycle", start: "top 92%", end: "top 45%", scrub: .6 } });
+    G.fromTo(".cycle-bar i", { scale: 0 }, { scale: 1, ease: "back.out(3)", duration: .6, stagger: .35, scrollTrigger: { trigger: ".cycle", start: "top 85%", once: true } });
+    /* бегущая строка едет вместе с прокруткой */
+    var mq = doc.getElementById("mq");
+    if (mq) G.fromTo(mq, { xPercent: 0 }, { xPercent: -33.333, ease: "none", scrollTrigger: { trigger: ".mq", start: "top bottom", end: "bottom top", scrub: .4 } });
+    /* бордовые и голубые плоскости за фото выдвигаются от края экрана */
+    G.utils.toArray(".slab").forEach(function (s) {
+      G.fromTo(s, { scaleX: 0 }, { scaleX: 1, duration: 1.1, ease: "power4.inOut", scrollTrigger: { trigger: s.parentNode, start: "top 80%", once: true } });
+    });
+    /* сигнатура: кадры открываются наклонным разрезом */
+    G.utils.toArray(".cut, .cutin").forEach(function (el, i) {
+      G.fromTo(el, { "--r": 0 }, { "--r": 1, duration: 1.3, ease: "power3.inOut", delay: el.classList.contains("cut") ? (i % 4) * .08 : .25,
+        scrollTrigger: { trigger: el, start: el.classList.contains("cut") ? "top 92%" : "top 82%", once: true } });
+    });
+    G.utils.toArray(".ph-inset, .ph-reno").forEach(function (el) {
+      G.fromTo(el, { y: 80, opacity: 0, rotate: 4 }, { y: 0, opacity: 1, rotate: 0, duration: 1.1, ease: "power3.out", delay: .5, scrollTrigger: { trigger: el.parentNode, start: "top 75%", once: true } });
+    });
+    /* до/после: показ, что разрез тянется */
+    if (ba) {
+      var st = { v: 92 };
+      setBa(92);
+      ST.create({ trigger: ba, start: "top 70%", once: true, onEnter: function () {
+        ba._tw = G.timeline({ onComplete: function () { ba._tw = null; } })
+          .to(st, { v: 28, duration: 1.6, ease: "power2.inOut", onUpdate: function () { setBa(st.v); } })
+          .to(st, { v: 55, duration: 1.1, ease: "power2.inOut", onUpdate: function () { setBa(st.v); } });
+      } });
     }
-    update();
-    runIntro();
+    /* карточки безопасности и строки «для кого» */
+    G.fromTo(".fact", { y: 80, opacity: 0, rotate: -2 }, { y: 0, opacity: 1, rotate: 0, duration: 1, ease: "power3.out", stagger: .12,
+      scrollTrigger: { trigger: ".facts", start: "top 85%", once: true } });
+    G.utils.toArray(".who-row").forEach(function (r, i) {
+      G.fromTo(r, { y: 50, opacity: 0 }, { y: 0, opacity: 1, delay: (i % 2) * .08, duration: 1, ease: "power3.out", scrollTrigger: { trigger: r, start: "top 90%", once: true } });
+    });
+    /* цитата загорается словами */
+    if (quote) ST.create({ trigger: quote, start: "top 85%", end: "bottom 45%", scrub: true, onUpdate: function (s) { paintQuote(s.progress); } });
+    G.fromTo(".tel-big", { scale: .85, opacity: 0, transformOrigin: "left center" }, { scale: 1, opacity: 1, duration: 1, ease: "back.out(1.6)", scrollTrigger: { trigger: ".tel-big", start: "top 90%", once: true } });
+    /* герой уезжает с лёгким параллаксом, только на десктопе */
+    mm.add("(min-width:761px)", function () {
+      G.to(".band .layer", { yPercent: 10, scale: 1.05, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+      G.utils.toArray(".media .ph-main, .media .ph-v").forEach(function (p) {
+        G.fromTo(p, { y: 50 }, { y: -50, ease: "none", scrollTrigger: { trigger: p, start: "top bottom", end: "bottom top", scrub: true } });
+      });
+    });
   }
-  if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(start); else start();
-  W.addEventListener("load", function () { fitAll(); measureHero(); update(); lentaState(); });
 
-
-  /* ---------- Герой: створки распахиваются на загрузке, за окном самоидущее слайдшоу комнат (решение владельца 05.11.2026: без смены по прокрутке) ---------- */
-  (function () {
-    var hx = doc.getElementById("top"), win = doc.getElementById("win"), cap = doc.getElementById("cap");
-    if (!hx || !win || !hx.classList.contains("hx2")) return;
-    var rooms = cap ? [].slice.call(cap.querySelectorAll(".hx2-room b")) : [];
-    var dots = cap ? [].slice.call(cap.querySelectorAll(".hx2-dots i")) : [];
-    var N = 3, cur = 0, timer = null, visible = true;
-    function show(i) {
-      cur = i;
-      win.style.setProperty("--p", (i / (N - 1)).toFixed(4));
-      for (var k = 0; k < rooms.length; k++) rooms[k].classList.toggle("is-on", k === i);
-      for (k = 0; k < dots.length; k++) dots[k].classList.toggle("is-on", k === i);
-    }
-    show(0);
-    function tick() { if (visible && !doc.hidden) show((cur + 1) % N); }
-    function start() { if (!timer && !REDUCED) timer = setInterval(tick, 4500); }
-    if ("IntersectionObserver" in W) {
-      new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.35 }).observe(win);
-    }
-    if (REDUCED || location.hash.length > 1 || W.pageYOffset > 80) { hx.classList.add("on"); start(); return; }
-    var done = false;
-    function go() {
-      if (done) return; done = true;
-      W.requestAnimationFrame(function () { W.requestAnimationFrame(function () { hx.classList.add("on"); setTimeout(start, 2600); }); });
-    }
-    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(go);
-    setTimeout(go, 600);
+  /* ---------- Старт ---------- */
+  (function initLang() {
+    /* ?lang= в адресе главнее сохранённого выбора: реклама ведёт на ?lang=ru */
+    var forced = (location.search.match(/[?&]lang=(ru|kk|en)/) || [])[1];
+    var saved = null; try { saved = localStorage.getItem("romancecity-lang"); } catch (e) {}
+    var lang = forced || saved || "ru";
+    if (lang !== "ru") setLang(lang);
+    else splitQuote();
   })();
+  motion();
+  runHero();
+  onScrollUi();
+  function onReady() {
+    fitH1(); sizeBand(); lentaState();
+    if (location.hash.length > 1) { var id = location.hash.slice(1); setTimeout(function () { goTo(id, true); }, 60); }
+  }
+  if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(onReady); else onReady();
+  W.addEventListener("load", function () { fitH1(); lentaState(); if (MOTION) ST.refresh(); });
+  W.addEventListener("resize", function () {
+    /* на телефоне смена только высоты - это адресная строка: раскладку не пересчитываем */
+    if (W.innerWidth === VW) return;
+    VW = W.innerWidth; MOBILE = W.matchMedia("(max-width:760px)").matches;
+    fitH1(); sizeBand(); lentaState();
+  });
 })();
