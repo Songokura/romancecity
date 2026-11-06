@@ -174,8 +174,8 @@
   I18N.en = {
     "hero.ak": "Kitchen-living room in Grand Monaco: crystal chandelier, made-to-order kitchen, herringbone parquet",
     "hero.ab": "Bedroom in Grand Monaco: upholstered bed, window to the courtyard",
-    "hero.r0": "Living room",
-    "hero.r1": "Kitchen",
+    "hero.r0": "Kitchen-living room",
+    "hero.r1": "Living room",
     "hero.r2": "Bedroom",
     "hero.zk": "Grand Monaco, Astana: apartment after renovation and furnishing",
     "meta.title": "Turnkey Apartment Flipping in Astana - Saule Isatayeva | Romance City",
@@ -193,7 +193,7 @@
     "hero.a1": "Facade of the Gorodskoy Romans residential quarter in Astana",
     "hero.a2": "Kitchen-living room after renovation in Evolution: ring chandelier, grey sofa",
     "hero.cap": "Grand Monaco, Astana: living room after renovation and furnishing",
-    "hero.a3": "Living room after renovation in Grand Monaco: crystal chandelier, light sofa, herringbone parquet, large window",
+    "hero.a3": "Kitchen-living room after renovation in Grand Monaco: crystal chandelier, made-to-order kitchen, herringbone parquet",
     "hero.a4": "Living room of a finished apartment: beige sofa, floor-length curtains, crystal chandelier",
     "hero.a5": "Bedroom in Grand Monaco: bed with an upholstered headboard, window to the courtyard",
     "kak.h": "How it works",
@@ -297,8 +297,8 @@
     "hero.seal": "renovation 1-2 months · custom furniture · sale ·",
     "mq.t": "Selection · Renovation · Furniture · Sale · Turnkey flipping ·",
     "re.drag": "Drag the handle: before and after furnishing",
-    "re.balt": "Kitchen-living room after renovation, without furniture",
-    "re.aalt": "Kitchen-living room in Grand Monaco with furniture: sofa, made-to-order kitchen, crystal chandelier",
+    "re.balt": "Living room after renovation, without furniture",
+    "re.aalt": "Living room in Grand Monaco with furniture: light sofa, crystal chandelier, large window",
     "pb.facalt": "Courtyard of a residential complex in Astana",
     "kt.alt": "Saule Isatayeva full-length by a city-view panel"
   };
