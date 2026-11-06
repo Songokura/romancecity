@@ -472,3 +472,21 @@ body.modal-open{overflow:hidden}
   html.js .hx-a{opacity:1;transform:none}
   .seal .ring{animation:none}
 }
+
+/* Объекты: на десктопе сетка без горизонтальной прокрутки, блок в один экран (06.11.2026) */
+@media (min-width:761px){
+  .lenta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;overflow:visible;scroll-snap-type:none;width:min(var(--wrap),calc(100% - 2 * var(--gut)));margin:0 auto;padding:4px 0 8px}
+  .obj{flex:none;padding:10px;border-radius:20px;display:flex;flex-direction:column}
+  .obj-ph .ph-big{aspect-ratio:5/4}
+  .obj-ph .ph{aspect-ratio:4/3}
+  .obj-ph .ph-wide{aspect-ratio:8/3}
+  .obj-cap{padding:12px 6px 4px}
+  .obj-cap b{font-size:clamp(20px,.6vw + 12px,24px)}
+  .obj-cap span{font-size:15px}
+}
+@media (min-width:761px) and (max-width:899px){
+  .lenta{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .obj-ph .ph-big{aspect-ratio:4/3.4}
+}

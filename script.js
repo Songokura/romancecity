@@ -456,7 +456,6 @@
       });
     });
     lenta.addEventListener("scroll", function () { if (!lenta._t) lenta._t = setTimeout(function () { lenta._t = 0; lentaState(); }, 80); }, { passive: true });
-    if (lenis) lenta.setAttribute("data-lenis-prevent-wheel", "");
   }
 
   /* ---------- Видео: немая петля по видимости, полный ролик по клику в модалке ---------- */
