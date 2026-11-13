@@ -1,5 +1,17 @@
 /* English dictionary. Loaded only when EN is chosen or by ?lang=en. */
 window.SITE_EN = {
+  "hero.lead2": "You come only twice. My team and I do everything else.",
+  "hero.d1b": "Visit 1",
+  "hero.d1": "You buy the apartment in your own name",
+  "hero.d2b": "1-2 months",
+  "hero.d2": "Renovation and furniture, without you",
+  "hero.d3b": "Visit 2",
+  "hero.d3": "The deal with a buyer, the profit is yours",
+  "hero.c1": "Living room",
+  "hero.c2": "Kitchen",
+  "hero.c3": "Bedroom",
+  "hero.a2": "Kitchen with built-in appliances in Grand Monaco residential complex, herringbone parquet",
+  "hero.a3": "Bedroom with a window onto the courtyard in Grand Monaco residential complex",
   "meta.title": "Turnkey apartment flipping in Astana - Saule Issatayeva | Romance City",
   "meta.desc": "Turnkey apartment flipping in Astana: I select an apartment for your budget from 30 million ₸, renovate it, furnish it and help find a buyer. The apartment is registered in your name, no prepayment. Renovation takes 1-2 months, the full cycle from 3 months.",
   "up.aria": "Romance City - to top",

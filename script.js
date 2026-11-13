@@ -147,6 +147,29 @@
   if (D.fonts && D.fonts.ready) D.fonts.ready.then(fitH1);
   $$(".hero-tog button").forEach(function (b) { b.addEventListener("click", function () { setR(+b.getAttribute("data-state"), true); }); });
 
+  /* ---------- герой: комнаты по очереди на телефоне ---------- */
+  (function () {
+    var gal = $("#heroGal"); if (!gal) return;
+    var figs = $$(".hg", gal), bars = $$(".hg-bars i", gal), i = 0, t = null, DUR = 5000;
+    gal.style.setProperty("--dur", DUR / 1000 + "s");
+    function show(n) {
+      i = (n + figs.length) % figs.length;
+      figs.forEach(function (f, k) { f.classList.toggle("on", k === i); });
+      bars.forEach(function (b, k) {
+        b.classList.remove("on");
+        b.classList.toggle("done", k < i);
+        b.getBoundingClientRect();
+        if (k === i) b.classList.add("on");
+      });
+    }
+    function mobile() { return W.innerWidth < 900; }
+    function run() { clearInterval(t); if (RM || !mobile()) return; t = setInterval(function () { if (!D.hidden) show(i + 1); }, DUR); }
+    gal.addEventListener("click", function () { if (!mobile()) return; show(i + 1); run(); });
+    var gw = W.innerWidth;
+    W.addEventListener("resize", function () { if (W.innerWidth !== gw) { gw = W.innerWidth; run(); } });
+    run();
+  })();
+
   /* ---------- сцены прокрутки ---------- */
   var stepsEl = $("#steps"), sts = $$(".st", stepsEl), stImgs = $$("#kakStack img");
   function setStep(i) {
