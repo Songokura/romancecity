@@ -127,7 +127,7 @@
   $$("[data-rv],[data-split],.ft-mark").forEach(function (el) { io.observe(el); });
 
   /* ---------- герой: паспарту раскрывается ---------- */
-  var art = $("#heroArt");
+  var art = $("#heroArt") || D.createElement("div");
   function setR(v, animate) {
     $$(".hero-tog button").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.getAttribute("data-state") === v)); });
     if (gsap && animate && !RM) gsap.to(art, { "--r": v, duration: 1.3, ease: "power2.inOut", overwrite: "auto" });

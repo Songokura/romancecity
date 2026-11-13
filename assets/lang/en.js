@@ -7,7 +7,7 @@ window.SITE_EN = {
   "ig.aria": "Saule Issatayeva on Instagram", "hdr.wa": "Message on WhatsApp", "menu.aria": "Menu",
   "menu.note": "Astana, 4 Shamshi Kaldayakov St. Mon-Sat 09:00-20:00. I work with investors from other cities online.", "menu.call": "Call",
   "hero.kicker": "Astana · turnkey flipping · since 2011",
-  "hero.t1": "<span class=\"ln\"><span>Apartment</span></span><span class=\"ln\"><span>flipping</span></span><span class=\"ln\"><span>turnkey</span></span><span class=\"ln\"><span>in&nbsp;Astana</span></span>",
+  "hero.t1": "Apartment flipping <em>turnkey</em> in&nbsp;Astana",
   "hero.t2": "from a bare shell to a profitable sale",
   "hero.lead": "You buy the apartment in your own name. My team and I renovate it in <span class=nw>1-2&nbsp;months</span>, furnish it and help find a buyer. You come twice: for the purchase and for the sale.",
   "hero.cta1": "Get an estimate on WhatsApp", "hero.cta2": "How it works", "hero.ig": "My apartments on Instagram →",
