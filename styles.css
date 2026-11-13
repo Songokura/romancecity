@@ -1,11 +1,11 @@
 /* Romance City */
 :root{
-  --green:#0F2A20; --deep:#0A1C15; --brass:#C6A566; --brass-h:#D3B478; --ivory:#F3EEE2;
-  --bg:#F3EEE2; --ink:#1B2A22; --ink2:#4A574F;
-  --blue:#C6A566; --blue2:#E8E0CE; --blue3:#EDE6D7;
-  --bordo:#0F2A20; --bordo-d:#0F2A20; --bordo-dd:#0A1C15; --beige:#E8E0CE;
-  --acc:#6B5021;
-  --line:rgba(27,42,34,.16);
+  --bg:#FBFAF7; --ink:#1A1920; --ink2:#55535C;
+  --blue:#A9CBEA; --blue2:#DCE9F6; --blue3:#EAF2FA;
+  --bordo:#8E1B35; --bordo-d:#6B1228; --bordo-dd:#4A0B1B; --beige:#EFE6D8;
+  --green:#6B1228; --deep:#4A0B1B; --brass:#A9CBEA; --brass-h:#C3DBF1; --ivory:#FBFAF7;
+  --acc:#8E1B35;
+  --line:rgba(26,25,32,.16);
   --e:cubic-bezier(.2,.7,.2,1);
   --t1:.2s; --t2:.45s; --t3:1.1s;
   --hdr:76px;
@@ -114,8 +114,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .hero{--ink:var(--ivory);--acc:var(--brass);position:relative;background:var(--green);color:var(--ivory);display:grid;grid-template-columns:minmax(0,46fr) minmax(0,54fr);min-height:100svh}
 .hero-ph{grid-column:2;grid-row:1;position:relative;overflow:hidden}
 .hero-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%}
-.hero-ph::after{content:"";position:absolute;inset:0 0 auto 0;height:140px;background:linear-gradient(180deg,rgba(10,28,21,.6),rgba(10,28,21,0));pointer-events:none}
-.hero-cap{position:absolute;right:var(--gut);bottom:28px;z-index:2;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ivory);padding:8px 12px;background:rgba(10,28,21,.6)}
+.hero-ph::after{content:"";position:absolute;inset:0 0 auto 0;height:140px;background:linear-gradient(180deg,rgba(74,11,27,.6),rgba(74,11,27,0));pointer-events:none}
+.hero-cap{position:absolute;right:var(--gut);bottom:28px;z-index:2;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ivory);padding:8px 12px;background:rgba(74,11,27,.6)}
 .hero-txt{grid-column:1;grid-row:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;padding:calc(var(--hdr) + 32px) clamp(28px,4vw,64px) 56px var(--gut)}
 .hero .kick{margin-bottom:0}
 .h1{font:400 clamp(36px,min(4vw,7.4vh),72px)/1.1 var(--fs);letter-spacing:-.005em;margin:26px 0 18px;overflow-wrap:break-word;max-width:100%}
@@ -140,8 +140,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   .hero .btn{min-height:50px}
 }
 .hero .kick{color:var(--brass)}
-.hero .btn:not(.btn-o){background:var(--brass);border-color:var(--brass);color:#14251C}
-.hero .btn:not(.btn-o):hover{background:var(--brass-h);border-color:var(--brass-h);color:#14251C}
+.hero .btn:not(.btn-o){background:var(--brass);border-color:var(--brass);color:#1A1920}
+.hero .btn:not(.btn-o):hover{background:var(--brass-h);border-color:var(--brass-h);color:#1A1920}
 .hero .btn-o{background:transparent;color:var(--ivory);border-color:rgba(243,238,226,.4)}
 .hero .lnk{color:var(--ivory)}
 
@@ -360,9 +360,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   .hero{display:flex;flex-direction:column;min-height:calc(100svh - 60px - env(safe-area-inset-bottom))}
   .hero-ph{flex:1 1 0;min-height:230px}
   .hero-ph img{object-position:50% 30%}
-  .hero-ph::after{height:120px;background:linear-gradient(180deg,rgba(10,28,21,.72),rgba(10,28,21,0))}
+  .hero-ph::after{height:120px;background:linear-gradient(180deg,rgba(74,11,27,.72),rgba(74,11,27,0))}
   .hero-cap{display:none}
-  .hero-txt{position:relative;z-index:2;display:block;margin-top:-96px;padding:84px var(--gut) 18px;background:linear-gradient(180deg,rgba(10,28,21,0) 0,rgba(10,28,21,.88) 70px,#0A1C15 104px)}
+  .hero-txt{position:relative;z-index:2;display:block;margin-top:-96px;padding:84px var(--gut) 18px;background:linear-gradient(180deg,rgba(74,11,27,0) 0,rgba(74,11,27,.88) 70px,#4A0B1B 104px)}
   .hero .kick{font-size:10.5px;letter-spacing:.1em;gap:8px}
   .hero .kick::before{width:18px}
   html[lang="kk"] .hero .kick{letter-spacing:.02em}
@@ -413,9 +413,4 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .kak-pp{background:none!important}
 .kak-stack{inset:0!important}
 .logo{font-family:var(--fs);font-weight:400;letter-spacing:0;font-size:clamp(20px,1.6vw,26px)}
-.bez{background:var(--green);color:var(--ivory)}
-.bez .kick{color:var(--brass)}
-.bez .h2,.bez h3{color:var(--ivory)}
-.bez p{color:rgba(243,238,226,.78)}
-.bez li,.bez .bez-g>*{border-color:rgba(198,165,102,.45)!important}
 .kak-stack img:first-child{object-position:50% 72%}
