@@ -157,7 +157,6 @@
       ST.create({ trigger: path, start: "top 78%", end: "bottom 62%", scrub: 0.5, onUpdate: function (s) { path.style.setProperty("--p", s.progress.toFixed(4)); } });
     }
     mm.add("(min-width: 900px)", function () {
-      gsap.fromTo("#heroPh picture", { yPercent: 0 }, { yPercent: -9, ease: "none", scrollTrigger: { trigger: "#heroPh", start: "top 40%", end: "bottom top", scrub: true } });
       $$(".ob-name").forEach(function (el, i) {
         gsap.fromTo(el, { xPercent: i % 2 ? 4 : -4 }, { xPercent: 0, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "top 45%", scrub: 0.6 } });
       });
