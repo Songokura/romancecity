@@ -117,33 +117,7 @@
   }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   $$("[data-rv],[data-split],.ph,.ft-mark").forEach(function (el) { io.observe(el); });
 
-  /* ---------- герой: три акта сделки ---------- */
-  (function () {
-    var hero = $("#top"), acts = $$("#acts .act"), deals = $$("#deal li"); if (!acts.length) return;
-    var i = 2, timer = null, DUR = 5200, seen = true;
-    hero.style.setProperty("--dur", DUR / 1000 + "s");
-    function show(n, run) {
-      i = (n + acts.length) % acts.length;
-      acts.forEach(function (a, k) { a.classList.toggle("on", k === i); });
-      deals.forEach(function (li, k) {
-        li.classList.remove("run");
-        li.classList.toggle("on", k === i);
-        var b = $("button", li); if (b) b.setAttribute("aria-pressed", String(k === i));
-      });
-      if (run) { deals[i].getBoundingClientRect(); deals[i].classList.add("run"); }
-    }
-    function play() {
-      clearInterval(timer); if (RM) return;
-      deals[i].classList.remove("run"); deals[i].getBoundingClientRect(); deals[i].classList.add("run");
-      timer = setInterval(function () { if (!D.hidden && seen) show(i + 1, true); }, DUR);
-    }
-    function pick(n) { if (n === i) return; show(n, !RM); play(); }
-    acts.forEach(function (a, k) { a.addEventListener("click", function () { pick(k); }); });
-    deals.forEach(function (li, k) { var b = $("button", li); if (b) b.addEventListener("click", function () { pick(k); }); });
-    if ("IntersectionObserver" in W) new IntersectionObserver(function (es) { seen = es[0].isIntersecting; }, { threshold: 0.2 }).observe(hero);
-    H.classList.add("ready");
-    W.setTimeout(play, 900);
-  })();
+  H.classList.add("ready");
 
   /* ---------- сцены прокрутки ---------- */
   var stepsEl = $("#steps"), sts = $$(".st", stepsEl), stImgs = $$("#kakStack img");
@@ -161,6 +135,17 @@
         gsap.fromTo(el, { yPercent: 0 }, { yPercent: parseFloat(el.getAttribute("data-par")), ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.6 } });
       });
       return function () { gsap.set("[data-par]", { clearProps: "transform" }); };
+    });
+    /* герой: кадр медленно уходит вверх; разворот объекта раскрывается на всю ширину окна */
+    mm.add("(min-width: 1000px)", function () {
+      var hp = $("#heroPh picture");
+      if (hp) gsap.to(hp, { yPercent: 7, ease: "none", scrollTrigger: { trigger: "#top", start: "top top", end: "bottom top", scrub: true } });
+    });
+    mm.add("(min-width: 760px)", function () {
+      var sw = $("#spWide"), si = sw && $(".sp-wide-i", sw); if (!sw) return;
+      gsap.fromTo(sw, { clipPath: "inset(0% 7% 0% 7%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "none", scrollTrigger: { trigger: sw, start: "top 92%", end: "top 18%", scrub: 0.4 } });
+      gsap.fromTo(si, { scale: 1.16 }, { scale: 1, ease: "none", scrollTrigger: { trigger: sw, start: "top bottom", end: "bottom top", scrub: 0.4 } });
+      return function () { gsap.set([sw, si], { clearProps: "all" }); };
     });
     W.addEventListener("load", function () { ST.refresh(); });
   } else {

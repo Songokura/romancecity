@@ -1,36 +1,24 @@
 /* English dictionary. Loaded only when EN is chosen or by ?lang=en. */
 window.SITE_EN = {
-  "hero.lead3": "For investors: apartments from 30&nbsp;million&nbsp;₸. You come just twice - my team and I handle the rest.",
-  "hero.lead2": "You come only twice. My team and I do everything else.",
-  "hero.d1b": "Visit 1",
-  "hero.d1": "You buy the apartment in your own name",
-  "hero.d2b": "1-2 months",
-  "hero.d2": "Renovation and furniture, without you",
-  "hero.d3b": "Visit 2",
-  "hero.d3": "The deal with a buyer, the profit is yours",
-  "hero.c1": "Living room",
-  "hero.c2": "Kitchen",
-  "hero.c3": "Bedroom",
-  "hero.a2": "Kitchen with built-in appliances in Grand Monaco residential complex, herringbone parquet",
-  "hero.a3": "Bedroom with a window onto the courtyard in Grand Monaco residential complex",
+
+
+
+
+
+
   "meta.title": "Turnkey apartment flipping in Astana - Saule Issatayeva | Romance City",
   "meta.desc": "Turnkey apartment flipping in Astana: I select an apartment for your budget from 30 million ₸, renovate it, furnish it and help find a buyer. The apartment is registered in your name, no prepayment. Renovation takes 1-2 months, the full cycle from 3 months.",
   "up.aria": "Romance City - to top",
   "nav.kak": "How it works", "nav.podbor": "Selection", "nav.remont": "Renovation", "nav.prodazha": "Sale", "nav.obekty": "Apartments", "nav.me": "About me", "nav.faq": "Questions", "nav.kont": "Contacts",
   "ig.aria": "Saule Issatayeva on Instagram", "hdr.wa": "Message on WhatsApp", "menu.aria": "Menu",
   "menu.note": "Astana, 4 Shamshi Kaldayakov St. Mon-Sat 09:00-20:00. I work with investors from other cities online.", "menu.call": "Call",
-  "hero.kicker": "Astana · turnkey flipping · since 2011",
-  "hero.t1": "Apartment flipping <em>turnkey</em> in&nbsp;Astana",
-  "hero.t2": "from a bare shell to a profitable sale",
-  "hero.lead": "You buy the apartment in your own name. My team and I renovate it in <span class=nw>1-2&nbsp;months</span>, furnish it and help find a buyer. You come twice: for the purchase and for the sale.",
+
+
   "hero.cta1": "Get an estimate on WhatsApp", "hero.cta2": "How it works", "hero.ig": "My apartments on Instagram →",
-  "hero.a0": "Living room in Grand Monaco after renovation, before furniture: herringbone parquet, chandelier, mirror panels",
   "hero.a1": "Living room after renovation in Grand Monaco: crystal chandelier, light sofa, herringbone parquet, large window",
-  "hero.cap": "Grand Monaco, Astana", "hero.tog": "Apartment state", "hero.tag0": "After renovation", "hero.tag1": "Furnished",
   "facts.aria": "In brief",
   "f1.n": "15&nbsp;years", "f1.t": "in flipping, since 2011",
   "f2.n": "about&nbsp;50", "f2.t": "apartments a year",
-  "f3.n": "from&nbsp;30M&nbsp;₸", "f3.t": "apartment price",
   "f4.n": "from&nbsp;3&nbsp;months", "f4.t": "deal cycle, renovation <span class=nw>1-2&nbsp;months</span>",
   "kak.h": "How it works",
   "kak.note": "I prepare the estimate for your budget before the purchase, at a free consultation.",
@@ -70,7 +58,6 @@ window.SITE_EN = {
   "pr.a1": "Kitchen-living room in Grand Monaco: crystal chandelier, floor-to-ceiling fronts",
   "pr.a2": "Bedroom in Grand Monaco: bed with a soft headboard, window to the courtyard",
   "pr.a3": "Bathroom in Grand Monaco: marble-look tiles, blue vanity, bathtub",
-  "pr.cap": "Grand Monaco, Astana: an apartment after renovation, on sale with furniture and appliances",
   "pr.l0": "I place the listing on Krisha.kz and other platforms",
   "pr.l1": "Viewings and negotiations with buyers are my job",
   "pr.l3": "In my deals the profit from one apartment starts from 5&nbsp;million&nbsp;₸; this income is not guaranteed, I calculate each apartment separately",
@@ -129,7 +116,24 @@ window.SITE_EN = {
   "kt.wa": "Message on WhatsApp", "kt.ig": "My Instagram", "kt.gis": "Office on 2GIS",
   "foot.tag": "Turnkey apartment flipping in Astana: selection, renovation, furniture, sale.",
   "foot.copy": "Saule Issatayeva, Gorodskoy Romance real estate agency",
-  "sticky.aria": "Quick contact"
+  "sticky.aria": "Quick contact",
+  "hero.k": "Turnkey apartment flipping",
+  "hero.t1": "An apartment in&nbsp;Astana: from purchase to&nbsp;sale <em>at&nbsp;a&nbsp;profit</em>",
+  "hero.lead3": "For investors. I select an apartment from the developer, renovate it, furnish it and help find a buyer.",
+  "hero.p1n": "from&nbsp;5M&nbsp;₸",
+  "hero.p1": "profit per apartment across my deals. Such income is not guaranteed.",
+  "hero.p2n": "2&nbsp;visits",
+  "hero.p2": "You come just twice: for the purchase and for the sale deal.",
+  "hero.cap": "Pictured: living room in Grand Monaco after renovation",
+  "f3.n": "no prepayment",
+  "f3.t": "for my work - I work for the result",
+  "pr.cap": "Living room of a finished apartment",
+  "ob.e2": "Kitchen-living room in Evolution: grey sofa, kitchen with mint fronts, bar counter",
+  "ob.e5": "Bathroom in Evolution: round mirror, wall-hung vanity, bathtub",
+  "ob.r1": "Kitchen-living room",
+  "ob.r2": "Bedroom",
+  "ob.r3": "Bathroom",
+  "ob.r4": "Apartment walkthrough"
 };
 window.SITE_EN_WA = {
   "default": "Hello Saule. I am writing from the Romance City website and would like a free consultation on flipping.",
