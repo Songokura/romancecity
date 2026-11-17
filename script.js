@@ -59,7 +59,7 @@
     H.lang = l;
     $$(".lang button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === l)); });
     setWa();
-    if (ST) ST.refresh();
+    refreshAll();
   }
   function setLang(l, save) {
     if (save) { try { localStorage.setItem("rc-lang", l); } catch (e) {} }
@@ -74,7 +74,7 @@
   function split(el) {
     var i = 0;
     (function walk(n) {
-      $$slice(n.childNodes).forEach(function (c) {
+      Array.prototype.slice.call(n.childNodes).forEach(function (c) {
         if (c.nodeType === 3) {
           var f = D.createDocumentFragment();
           c.nodeValue.split(/([ \n\t]+)/).forEach(function (p) {
@@ -89,7 +89,37 @@
       });
     })(el);
   }
-  function $$slice(l) { return Array.prototype.slice.call(l); }
+
+  function refreshAll() {
+    carousels.forEach(function (c) { c.update(); });
+    if (ST) ST.refresh();
+  }
+
+  /* ---------- листаемые ленты со стрелками ---------- */
+  var carousels = [];
+  $$(".arrows[data-for]").forEach(function (box) {
+    var el = D.getElementById(box.getAttribute("data-for")); if (!el) return;
+    var prev = $(".ar-p", box), next = $(".ar-n", box);
+    function items() { return Array.prototype.slice.call(el.children); }
+    function max() { return el.scrollWidth - el.clientWidth; }
+    function pos() { var it = items(), base = it[0].offsetLeft; return it.map(function (c) { return Math.min(c.offsetLeft - base, max()); }); }
+    function go(d) {
+      var p = pos(), x = el.scrollLeft, k = 0, b = 0;
+      p.forEach(function (v, i) { if (Math.abs(v - x) < Math.abs(p[b] - x)) b = i; }); k = b;
+      if (d > 0) { while (k < p.length - 1 && p[k] <= x + 4) k++; } else { while (k > 0 && p[k] >= x - 4) k--; }
+      el.scrollTo({ left: p[k], behavior: RM ? "auto" : "smooth" });
+    }
+    function update() {
+      var m = max(), fits = m <= 4;
+      prev.hidden = next.hidden = fits;
+      prev.disabled = el.scrollLeft <= 4; next.disabled = el.scrollLeft >= m - 4;
+    }
+    prev.addEventListener("click", function () { go(-1); });
+    next.addEventListener("click", function () { go(1); });
+    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("keydown", function (e) { if (e.key === "ArrowRight") { e.preventDefault(); go(1); } if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } });
+    carousels.push({ update: update });
+  });
 
   /* ---------- старт ---------- */
   snapshot();
@@ -100,60 +130,53 @@
   var qs = (location.search.match(/[?&]lang=(ru|kk|en)\b/) || [])[1], saved = null;
   try { saved = localStorage.getItem("rc-lang"); } catch (e) {}
   var startLang = qs || (/^(ru|kk|en)$/.test(saved || "") ? saved : "ru");
-  if (startLang !== "ru") setLang(startLang, false);
   $$(".lang button").forEach(function (b) { b.addEventListener("click", function () { setLang(b.getAttribute("data-lang"), true); }); });
 
-  /* плавная прокрутка */
-  if (W.Lenis && gsap && !RM) {
+  /* плавная прокрутка - только там, где есть мышь */
+  if (W.Lenis && gsap && !RM && W.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     lenis = new W.Lenis({ lerp: 0.11 });
     if (ST) lenis.on("scroll", ST.update);
     gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
     gsap.ticker.lagSmoothing(0);
   }
 
-  /* появление: текст, слова заголовков, раскрытие фото */
+  /* появление */
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
-  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-  $$("[data-rv],[data-split],.ph,.ft-mark").forEach(function (el) { io.observe(el); });
-
+  }, { threshold: 0.1, rootMargin: "0px 0px -5% 0px" });
+  $$("[data-rv],[data-ph],[data-split]").forEach(function (el) { io.observe(el); });
   H.classList.add("ready");
 
   /* ---------- сцены прокрутки ---------- */
-  var stepsEl = $("#steps"), sts = $$(".st", stepsEl), stImgs = $$("#kakStack img");
-  function setStep(i) {
-    sts.forEach(function (s, k) { s.classList.toggle("on", k === i); });
-    stImgs.forEach(function (s, k) { s.classList.toggle("on", k === i); });
-  }
+  var path = $("#path");
   if (gsap && ST && !RM) {
-    sts.forEach(function (s, i) {
-      ST.create({ trigger: s, start: "top 58%", end: "bottom 58%", onToggle: function (self) { if (self.isActive) setStep(i); } });
-    });
+    ST.config({ ignoreMobileResize: true });
     var mm = gsap.matchMedia();
+    if (path) {
+      path.style.setProperty("--p", 0);
+      ST.create({ trigger: path, start: "top 78%", end: "bottom 62%", scrub: 0.5, onUpdate: function (s) { path.style.setProperty("--p", s.progress.toFixed(4)); } });
+    }
     mm.add("(min-width: 900px)", function () {
-      $$("[data-par]").forEach(function (el) {
-        gsap.fromTo(el, { yPercent: 0 }, { yPercent: parseFloat(el.getAttribute("data-par")), ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.6 } });
+      gsap.fromTo("#heroPh picture", { yPercent: 0 }, { yPercent: -9, ease: "none", scrollTrigger: { trigger: "#heroPh", start: "top 40%", end: "bottom top", scrub: true } });
+      $$(".ob-name").forEach(function (el, i) {
+        gsap.fromTo(el, { xPercent: i % 2 ? 4 : -4 }, { xPercent: 0, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "top 45%", scrub: 0.6 } });
       });
-      return function () { gsap.set("[data-par]", { clearProps: "transform" }); };
-    });
-    /* герой: кадр медленно уходит вверх; разворот объекта раскрывается на всю ширину окна */
-    mm.add("(min-width: 1000px)", function () {
-      var hp = $("#heroPh picture");
-      if (hp) gsap.to(hp, { yPercent: 7, ease: "none", scrollTrigger: { trigger: "#top", start: "top top", end: "bottom top", scrub: true } });
-    });
-    mm.add("(min-width: 760px)", function () {
-      var sw = $("#spWide"), si = sw && $(".sp-wide-i", sw); if (!sw) return;
-      gsap.fromTo(sw, { clipPath: "inset(0% 7% 0% 7%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "none", scrollTrigger: { trigger: sw, start: "top 92%", end: "top 18%", scrub: 0.4 } });
-      gsap.fromTo(si, { scale: 1.16 }, { scale: 1, ease: "none", scrollTrigger: { trigger: sw, start: "top bottom", end: "bottom top", scrub: 0.4 } });
-      return function () { gsap.set([sw, si], { clearProps: "all" }); };
+      gsap.fromTo(".tr1", { y: 40 }, { y: -30, ease: "none", scrollTrigger: { trigger: ".trio", start: "top bottom", end: "bottom top", scrub: 0.6 } });
+      gsap.fromTo(".tr3", { y: 70 }, { y: -50, ease: "none", scrollTrigger: { trigger: ".trio", start: "top bottom", end: "bottom top", scrub: 0.6 } });
+      gsap.fromTo(".pr-ph2", { y: 60 }, { y: -60, ease: "none", scrollTrigger: { trigger: ".pr-grid", start: "top bottom", end: "bottom top", scrub: 0.6 } });
+      gsap.fromTo(".pb-sm", { y: 50 }, { y: -30, ease: "none", scrollTrigger: { trigger: ".pb-vis", start: "top bottom", end: "bottom top", scrub: 0.6 } });
+      return function () { gsap.set(".ob-name,.tr1,.tr3,.pr-ph2,.pb-sm,#heroPh picture", { clearProps: "transform" }); };
     });
     W.addEventListener("load", function () { ST.refresh(); });
-  } else {
-    sts.forEach(function (s) { s.classList.add("on"); });
   }
+  carousels.forEach(function (c) { c.update(); });
+  if (D.fonts && D.fonts.ready) D.fonts.ready.then(refreshAll);
+  var rw = W.innerWidth;
+  W.addEventListener("resize", function () { if (W.innerWidth === rw) return; rw = W.innerWidth; carousels.forEach(function (c) { c.update(); }); });
+  if (startLang !== "ru") setLang(startLang, false);
 
   /* ---------- шапка, меню, якоря ---------- */
-  var BP = 1240; /* тот же порог, что у строки навигации в styles.css */
+  var BP = 1360; /* тот же порог, что у строки навигации в styles.css */
   var hdr = $("#hdr"), lastY = 0, menu = $("#menu"), burger = $("#burger");
   function onScroll() {
     var y = W.scrollY || 0;
@@ -172,16 +195,39 @@
   burger.addEventListener("click", function () { toggleMenu(menu.hidden); });
   D.addEventListener("keydown", function (e) { if (e.key === "Escape" && !menu.hidden) toggleMenu(false); });
   W.addEventListener("resize", function () { if (W.innerWidth >= BP && !menu.hidden) toggleMenu(false); });
+  function scrollToY(y, fast) {
+    if (lenis) lenis.scrollTo(y, { duration: fast ? 0.01 : 1.3, force: true });
+    else W.scrollTo({ top: y, behavior: RM || fast ? "auto" : "smooth" });
+  }
+  function goId(id, fast) {
+    var el = id ? D.getElementById(id) : null; if (!el) return false;
+    var y = 0;
+    if (id !== "top") {
+      var cs = getComputedStyle(el), pad = el.tagName === "SECTION" ? Math.max(0, parseFloat(cs.paddingTop) - 28) : -16;
+      y = el.getBoundingClientRect().top + W.scrollY + pad;
+      if (y < W.scrollY) y -= hdr.offsetHeight; /* вверх - шапка вернётся */
+    }
+    scrollToY(Math.max(0, Math.round(y)), fast);
+    return true;
+  }
   D.addEventListener("click", function (e) {
     var a = e.target.closest ? e.target.closest('a[href^="#"]') : null; if (!a) return;
-    var id = a.getAttribute("href").slice(1), el = id ? D.getElementById(id) : null; if (!el) return;
+    var id = a.getAttribute("href").slice(1); if (!D.getElementById(id)) return;
     e.preventDefault();
     if (!menu.hidden) toggleMenu(false);
-    var y = id === "top" ? 0 : el.getBoundingClientRect().top + W.scrollY;
-    var up = y < W.scrollY, off = id === "top" ? 0 : (up ? -(hdr.offsetHeight + 12) : -16);
-    if (lenis) lenis.scrollTo(y + off, { duration: 1.5 });
-    else W.scrollTo({ top: y + off, behavior: RM ? "auto" : "smooth" });
+    goId(id);
     if (history.replaceState) history.replaceState(null, "", id === "top" ? location.pathname + location.search : "#" + id);
+  });
+  if (location.hash.length > 1) W.addEventListener("load", function () { setTimeout(function () { if (ST) ST.refresh(); goId(location.hash.slice(1), true); }, 120); });
+
+  /* ---------- вопросы ---------- */
+  $$("#qa .q").forEach(function (q) {
+    var b = $("button", q);
+    b.addEventListener("click", function () {
+      var on = !q.classList.contains("on");
+      q.classList.toggle("on", on); b.setAttribute("aria-expanded", String(on));
+      if (ST) setTimeout(function () { ST.refresh(); }, 450);
+    });
   });
 
   /* ---------- видео: играет, пока в кадре ---------- */
