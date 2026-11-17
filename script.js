@@ -58,7 +58,7 @@
     var md = $('meta[name="description"]'); if (md && t("meta.desc")) md.content = t("meta.desc");
     H.lang = l;
     $$(".lang button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === l)); });
-    setWa(); fitH1();
+    setWa();
     if (ST) ST.refresh();
   }
   function setLang(l, save) {
@@ -91,15 +91,6 @@
   }
   function $$slice(l) { return Array.prototype.slice.call(l); }
 
-  /* ---------- заголовок героя по ширине колонки ---------- */
-  function fitH1() {
-    var h = $("#h1"); if (!h) return;
-    h.style.fontSize = "";
-    var avail = h.clientWidth, max = 0;
-    $$(".ln>span", h).forEach(function (s) { max = Math.max(max, s.offsetWidth); });
-    if (max > avail && max > 0) h.style.fontSize = Math.floor(parseFloat(getComputedStyle(h).fontSize) * avail / max * 0.985) + "px";
-  }
-
   /* ---------- старт ---------- */
   snapshot();
   $$("[data-split]").forEach(split);
@@ -120,54 +111,38 @@
     gsap.ticker.lagSmoothing(0);
   }
 
-  /* появление */
+  /* появление: текст, слова заголовков, раскрытие фото */
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
   }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-  $$("[data-rv],[data-split],.ft-mark").forEach(function (el) { io.observe(el); });
+  $$("[data-rv],[data-split],.ph,.ft-mark").forEach(function (el) { io.observe(el); });
 
-  /* ---------- герой: паспарту раскрывается ---------- */
-  var art = $("#heroArt") || D.createElement("div");
-  function setR(v, animate) {
-    $$(".hero-tog button").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.getAttribute("data-state") === v)); });
-    if (gsap && animate && !RM) gsap.to(art, { "--r": v, duration: 1.3, ease: "power2.inOut", overwrite: "auto" });
-    else art.style.setProperty("--r", v);
-  }
-  var started = false;
-  function intro() {
-    if (started) return; started = true;
-    fitH1();
-    H.classList.add("ready");
-    if (!gsap || RM) { art.style.setProperty("--m0", 1); art.style.setProperty("--r", 1); return; }
-    gsap.fromTo(art, { "--m0": W.innerWidth < 900 ? 1.7 : 1.9 }, { "--m0": 1, duration: 1.9, ease: "power3.out", delay: 0.1 });
-    gsap.fromTo(art, { "--r": 0 }, { "--r": 1, duration: 1.7, ease: "power2.inOut", delay: 0.8 });
-  }
-  /* раскрытие стартует сразу, не дожидаясь шрифтов (LCP на телефоне); после загрузки шрифтов заголовок переподгоняется */
-  if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", intro); else intro();
-  if (D.fonts && D.fonts.ready) D.fonts.ready.then(fitH1);
-  $$(".hero-tog button").forEach(function (b) { b.addEventListener("click", function () { setR(+b.getAttribute("data-state"), true); }); });
-
-  /* ---------- герой: комнаты по очереди на телефоне ---------- */
+  /* ---------- герой: три акта сделки ---------- */
   (function () {
-    var gal = $("#heroGal"); if (!gal) return;
-    var figs = $$(".hg", gal), bars = $$(".hg-bars i", gal), i = 0, t = null, DUR = 5000;
-    gal.style.setProperty("--dur", DUR / 1000 + "s");
-    function show(n) {
-      i = (n + figs.length) % figs.length;
-      figs.forEach(function (f, k) { f.classList.toggle("on", k === i); });
-      bars.forEach(function (b, k) {
-        b.classList.remove("on");
-        b.classList.toggle("done", k < i);
-        b.getBoundingClientRect();
-        if (k === i) b.classList.add("on");
+    var hero = $("#top"), acts = $$("#acts .act"), deals = $$("#deal li"); if (!acts.length) return;
+    var i = 2, timer = null, DUR = 5200, seen = true;
+    hero.style.setProperty("--dur", DUR / 1000 + "s");
+    function show(n, run) {
+      i = (n + acts.length) % acts.length;
+      acts.forEach(function (a, k) { a.classList.toggle("on", k === i); });
+      deals.forEach(function (li, k) {
+        li.classList.remove("run");
+        li.classList.toggle("on", k === i);
+        var b = $("button", li); if (b) b.setAttribute("aria-pressed", String(k === i));
       });
+      if (run) { deals[i].getBoundingClientRect(); deals[i].classList.add("run"); }
     }
-    function mobile() { return W.innerWidth < 900; }
-    function run() { clearInterval(t); if (RM || !mobile()) return; t = setInterval(function () { if (!D.hidden) show(i + 1); }, DUR); }
-    gal.addEventListener("click", function () { if (!mobile()) return; show(i + 1); run(); });
-    var gw = W.innerWidth;
-    W.addEventListener("resize", function () { if (W.innerWidth !== gw) { gw = W.innerWidth; run(); } });
-    run();
+    function play() {
+      clearInterval(timer); if (RM) return;
+      deals[i].classList.remove("run"); deals[i].getBoundingClientRect(); deals[i].classList.add("run");
+      timer = setInterval(function () { if (!D.hidden && seen) show(i + 1, true); }, DUR);
+    }
+    function pick(n) { if (n === i) return; show(n, !RM); play(); }
+    acts.forEach(function (a, k) { a.addEventListener("click", function () { pick(k); }); });
+    deals.forEach(function (li, k) { var b = $("button", li); if (b) b.addEventListener("click", function () { pick(k); }); });
+    if ("IntersectionObserver" in W) new IntersectionObserver(function (es) { seen = es[0].isIntersecting; }, { threshold: 0.2 }).observe(hero);
+    H.classList.add("ready");
+    W.setTimeout(play, 900);
   })();
 
   /* ---------- сцены прокрутки ---------- */
@@ -176,44 +151,24 @@
     sts.forEach(function (s, k) { s.classList.toggle("on", k === i); });
     stImgs.forEach(function (s, k) { s.classList.toggle("on", k === i); });
   }
-
   if (gsap && ST && !RM) {
-    gsap.fromTo(art, { "--m": 1 }, { "--m": 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom 35%", scrub: 0.4 } });
-
-    $$(".pp[data-pp]").forEach(function (el) {
-      var to = parseFloat(el.getAttribute("data-to") || "0");
-      gsap.fromTo(el, { "--m": 1 }, { "--m": to, ease: "none", scrollTrigger: { trigger: el, start: "top 96%", end: "top 28%", scrub: 0.5 } });
-    });
-
     sts.forEach(function (s, i) {
-      ST.create({ trigger: s, start: "top 56%", end: "bottom 56%", onToggle: function (self) { if (self.isActive) setStep(i); } });
+      ST.create({ trigger: s, start: "top 58%", end: "bottom 58%", onToggle: function (self) { if (self.isActive) setStep(i); } });
     });
-    ST.create({ trigger: stepsEl, start: "top 56%", end: "bottom 56%", onUpdate: function (self) { stepsEl.style.setProperty("--p", self.progress.toFixed(4)); } });
-
-    var mm = gsap.matchMedia(), cols = $$(".trip-c");
+    var mm = gsap.matchMedia();
     mm.add("(min-width: 900px)", function () {
-      var tl = gsap.timeline({ scrollTrigger: { trigger: "#tripStage", start: "top top", end: "+=140%", pin: true, scrub: 0.5, anticipatePin: 1 } });
-      tl.fromTo(cols, { "--t": 1 }, { "--t": 0, ease: "power1.inOut", duration: 1, stagger: 0.07 }, 0)
-        .fromTo(".trip-head", { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -50, ease: "none", duration: 0.3 }, 0.08)
-        .to({}, { duration: 0.12 });
       $$("[data-par]").forEach(function (el) {
-        gsap.fromTo(el, { yPercent: 0 }, { yPercent: parseFloat(el.getAttribute("data-par")), ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
+        gsap.fromTo(el, { yPercent: 0 }, { yPercent: parseFloat(el.getAttribute("data-par")), ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.6 } });
       });
-      return function () { gsap.set(".trip-head", { clearProps: "all" }); gsap.set("[data-par]", { clearProps: "transform" }); };
-    });
-    mm.add("(max-width: 899px)", function () {
-      cols.forEach(function (c) {
-        gsap.fromTo(c, { "--t": 1 }, { "--t": 0, ease: "none", scrollTrigger: { trigger: c, start: "top 94%", end: "top 26%", scrub: 0.5 } });
-      });
+      return function () { gsap.set("[data-par]", { clearProps: "transform" }); };
     });
     W.addEventListener("load", function () { ST.refresh(); });
   } else {
-    $$(".pp[data-pp]").forEach(function (el) { el.style.setProperty("--m", el.getAttribute("data-to") || "0"); });
-    art.style.setProperty("--m", 1);
     sts.forEach(function (s) { s.classList.add("on"); });
   }
 
   /* ---------- шапка, меню, якоря ---------- */
+  var BP = 1240; /* тот же порог, что у строки навигации в styles.css */
   var hdr = $("#hdr"), lastY = 0, menu = $("#menu"), burger = $("#burger");
   function onScroll() {
     var y = W.scrollY || 0;
@@ -231,7 +186,7 @@
   }
   burger.addEventListener("click", function () { toggleMenu(menu.hidden); });
   D.addEventListener("keydown", function (e) { if (e.key === "Escape" && !menu.hidden) toggleMenu(false); });
-  W.addEventListener("resize", function () { if (W.innerWidth >= 1720 && !menu.hidden) toggleMenu(false); });
+  W.addEventListener("resize", function () { if (W.innerWidth >= BP && !menu.hidden) toggleMenu(false); });
   D.addEventListener("click", function (e) {
     var a = e.target.closest ? e.target.closest('a[href^="#"]') : null; if (!a) return;
     var id = a.getAttribute("href").slice(1), el = id ? D.getElementById(id) : null; if (!el) return;
@@ -243,9 +198,6 @@
     else W.scrollTo({ top: y + off, behavior: RM ? "auto" : "smooth" });
     if (history.replaceState) history.replaceState(null, "", id === "top" ? location.pathname + location.search : "#" + id);
   });
-
-  var rw = W.innerWidth;
-  W.addEventListener("resize", function () { if (W.innerWidth !== rw) { rw = W.innerWidth; fitH1(); } });
 
   /* ---------- видео: играет, пока в кадре ---------- */
   var v = $("#gmLoop");

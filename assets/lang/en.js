@@ -1,5 +1,6 @@
 /* English dictionary. Loaded only when EN is chosen or by ?lang=en. */
 window.SITE_EN = {
+  "hero.lead3": "For investors: apartments from 30&nbsp;million&nbsp;₸. You come just twice - my team and I handle the rest.",
   "hero.lead2": "You come only twice. My team and I do everything else.",
   "hero.d1b": "Visit 1",
   "hero.d1": "You buy the apartment in your own name",
